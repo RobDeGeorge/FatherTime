@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format type-check clean run
+.PHONY: help install install-dev test lint format type-check clean run build build-dev
 
 # Default target
 help:
@@ -11,6 +11,8 @@ help:
 	@echo "  type-check   - Run type checking (mypy)"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  run          - Run the application"
+	@echo "  build        - Build executable with PyInstaller"
+	@echo "  build-dev    - Build executable with debug console"
 	@echo "  qa           - Run all quality checks (lint, type-check, test)"
 
 # Install production dependencies
@@ -53,8 +55,20 @@ run:
 qa: lint type-check test
 	@echo "All quality checks passed!"
 
+# Build executable
+build: install
+	python build.py
+
+# Build executable with debug console
+build-dev: install
+	sed 's/console=False/console=True/' build.spec > build-dev.spec
+	python -m PyInstaller --clean --noconfirm build-dev.spec
+	rm build-dev.spec
+	@echo "Debug build completed in dist/"
+
 # Development workflow
 dev-setup: install-dev
 	@echo "Development environment set up!"
 	@echo "Run 'make qa' to check code quality"
 	@echo "Run 'make run' to start the application"
+	@echo "Run 'make build' to create executable"

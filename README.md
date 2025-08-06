@@ -55,6 +55,53 @@ make run
 python main.py
 ```
 
+## Building Executable
+
+To create a standalone .exe (Windows) or executable (Linux/Mac):
+
+### Quick Build
+```bash
+make build
+```
+
+### Manual Build Process
+```bash
+# Activate virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install build dependencies
+pip install pyinstaller>=5.0.0
+
+# Build executable
+python build.py
+```
+
+### Build Options
+
+**Standard Build (no console):**
+```bash
+make build
+```
+
+**Debug Build (with console for troubleshooting):**
+```bash
+make build-dev
+```
+
+**Custom Build:**
+```bash
+# Edit build.spec file for advanced options
+pyinstaller --clean --noconfirm build.spec
+```
+
+### Build Output
+
+The executable will be created in the `dist/` directory:
+- **Windows**: `dist/FatherTime.exe`
+- **Linux/Mac**: `dist/FatherTime`
+
+The executable includes all dependencies and can be distributed without requiring Python installation.
+
 ### Controls
 
 - **+ Stopwatch**: Create a new stopwatch timer
@@ -86,6 +133,8 @@ make type-check    # Run type checking (mypy)
 make qa            # Run all quality checks
 make clean         # Clean build artifacts
 make run           # Run the application
+make build         # Build executable
+make build-dev     # Build executable with debug console
 ```
 
 ### Project Structure
