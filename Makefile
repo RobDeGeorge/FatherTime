@@ -13,6 +13,7 @@ help:
 	@echo "  run          - Run the application"
 	@echo "  build        - Build executable with PyInstaller"
 	@echo "  build-dev    - Build executable with debug console"
+	@echo "  build-win    - Build Windows-optimized executable"
 	@echo "  qa           - Run all quality checks (lint, type-check, test)"
 
 # Install production dependencies
@@ -65,6 +66,11 @@ build-dev: install
 	python -m PyInstaller --clean --noconfirm build-dev.spec
 	rm build-dev.spec
 	@echo "Debug build completed in dist/"
+
+# Build Windows-optimized executable
+build-win: install
+	python -m PyInstaller --clean --noconfirm build-windows.spec
+	@echo "Windows build completed in dist/"
 
 # Development workflow
 dev-setup: install-dev

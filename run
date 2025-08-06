@@ -3,7 +3,7 @@
 # Activate virtual environment and run Father Time
 source venv/bin/activate
 
-# Force X11 backend for better compatibility
-export QT_QPA_PLATFORM=xcb
+# Qt platform will be auto-detected by the application
+# No need to force a specific platform here
 
 python main.py

@@ -1,6 +1,7 @@
 """Configuration constants and settings for Father Time application."""
 
 import os
+import sys
 from typing import Dict
 
 # Application constants
@@ -24,12 +25,33 @@ BATCH_SAVE_INTERVAL = 10000  # 10 seconds
 # Archive settings
 ARCHIVE_DAYS_THRESHOLD = 14  # Archive data older than 2 weeks
 
-# Qt environment settings
-QT_ENVIRONMENT: Dict[str, str] = {
-    "QT_QPA_PLATFORM": "xcb",
-    "QT_QUICK_BACKEND": "software",
-    "QSG_RHI_BACKEND": "software",
-}
+# Qt environment settings - platform specific
+def get_qt_environment() -> Dict[str, str]:
+    """Get Qt environment settings based on the current platform."""
+    if sys.platform.startswith('win'):
+        # Windows settings
+        return {
+            "QT_QPA_PLATFORM": "windows",
+            "QT_QUICK_BACKEND": "software",
+            "QSG_RHI_BACKEND": "software",
+        }
+    elif sys.platform.startswith('darwin'):
+        # macOS settings
+        return {
+            "QT_QPA_PLATFORM": "cocoa",
+            "QT_QUICK_BACKEND": "software", 
+            "QSG_RHI_BACKEND": "software",
+        }
+    else:
+        # Linux/Unix settings
+        return {
+            "QT_QPA_PLATFORM": "xcb",
+            "QT_QUICK_BACKEND": "software",
+            "QSG_RHI_BACKEND": "software",
+        }
+
+# Default Qt environment for backwards compatibility
+QT_ENVIRONMENT: Dict[str, str] = get_qt_environment()
 
 # Default color scheme
 DEFAULT_COLORS: Dict[str, str] = {
