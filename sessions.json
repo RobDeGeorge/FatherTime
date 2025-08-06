@@ -1,0 +1,114 @@
+{
+  "sessions": [
+    {
+      "id": 1,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T10:17:06.389581",
+      "end_time": "2025-08-06T10:17:11.001341",
+      "duration_seconds": 4,
+      "is_active": false
+    },
+    {
+      "id": 2,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T10:22:54.885724",
+      "end_time": "2025-08-06T10:23:16.472001",
+      "duration_seconds": 21,
+      "is_active": false
+    },
+    {
+      "id": 3,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:08:53.357897",
+      "end_time": "2025-08-06T11:08:55.787095",
+      "duration_seconds": 2,
+      "is_active": false
+    },
+    {
+      "id": 4,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:11:09.345975",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:11:24.816821",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 6,
+      "timer_id": 2,
+      "project_name": "anch",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:16:09.063872",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 7,
+      "timer_id": 2,
+      "project_name": "anch",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:22:29.208623",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 8,
+      "timer_id": 2,
+      "project_name": "anch",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T11:41:20.259670",
+      "end_time": "2025-08-06T11:41:25.605593",
+      "duration_seconds": 5,
+      "is_active": false
+    },
+    {
+      "id": 9,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T12:48:15.491538",
+      "end_time": "2025-08-06T12:48:17.959592",
+      "duration_seconds": 2,
+      "is_active": false
+    },
+    {
+      "id": 10,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T12:49:35.436055",
+      "end_time": "2025-08-06T12:49:39.841899",
+      "duration_seconds": 4,
+      "is_active": false
+    },
+    {
+      "id": 11,
+      "timer_id": 1,
+      "project_name": "Anchorage",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T12:49:40.788881",
+      "end_time": "2025-08-06T12:49:43.321386",
+      "duration_seconds": 2,
+      "is_active": false
+    }
+  ]
+}

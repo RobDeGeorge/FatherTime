@@ -1,0 +1,1511 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+
+ApplicationWindow {
+    id: window
+    width: 800
+    height: 600
+    minimumWidth: 600
+    minimumHeight: 400
+    visible: true
+    title: "Father Time"
+    
+    property color primaryColor: configManager.primary
+    property color secondaryColor: configManager.secondary
+    property color accentColor: configManager.accent
+    property color successColor: configManager.success
+    property color dangerColor: configManager.danger
+    property color warningColor: configManager.warning
+    property color backgroundColor: configManager.background
+    property color textColor: configManager.text
+    
+    // Refresh daily breakdown when sessions change
+    Connections {
+        target: timerManager
+        function onDailyBreakdownChanged() {
+            // Model will update automatically via property binding
+        }
+    }
+    
+    property date currentDate: new Date()
+    property int currentMonth: currentDate.getMonth()
+    property int currentYear: currentDate.getFullYear()
+    property bool sidebarExpanded: false
+    property string selectedDateForTimers: new Date().toISOString().split('T')[0] // Today by default
+    
+    // Navigation properties
+    property int selectedCellIndex: -1
+    property bool navigating: false
+    property Timer navigationTimer: Timer {
+        id: navigationTimer
+        interval: 50
+        onTriggered: navigating = false
+    }
+    
+    
+    // Navigation functions
+    function navigateGrid(direction) {
+        if (navigating) return
+        navigating = true
+        navigationTimer.restart()
+        
+        // Initialize to today if no selection
+        if (selectedCellIndex === -1) {
+            initializeSelection()
+            return
+        }
+        
+        var cols = 7 // Calendar always has 7 columns
+        var totalCells = 42 // 6 weeks * 7 days
+        
+        // Convert current 1D index to 2D coordinates
+        var currentRow = Math.floor(selectedCellIndex / cols)
+        var currentCol = selectedCellIndex % cols
+        var newRow = currentRow
+        var newCol = currentCol
+        
+        switch (direction) {
+            case "up":
+                newRow = (currentRow - 1 + 6) % 6 // 6 rows, wrap around
+                break
+            case "down":
+                newRow = (currentRow + 1) % 6
+                break
+            case "left":
+                newCol = (currentCol - 1 + cols) % cols
+                break
+            case "right":
+                newCol = (currentCol + 1) % cols
+                break
+        }
+        
+        // Convert back to 1D index
+        var newIndex = newRow * cols + newCol
+        selectedCellIndex = newIndex
+        
+        // Update selected date for timers to the newly selected cell
+        updateSelectedDateFromIndex()
+    }
+    
+    function initializeSelection() {
+        // Find today's cell index
+        let today = new Date()
+        let firstDay = new Date(currentYear, currentMonth, 1) 
+        let startDay = firstDay.getDay()
+        
+        if (today.getMonth() === currentMonth && today.getFullYear() === currentYear) {
+            // Today is in current month
+            selectedCellIndex = startDay + today.getDate() - 1
+        } else {
+            // Default to first day of current month
+            selectedCellIndex = startDay
+        }
+        updateSelectedDateFromIndex()
+    }
+    
+    function selectCurrentCell() {
+        if (selectedCellIndex >= 0) {
+            updateSelectedDateFromIndex()
+            // Also open day detail dialog
+            var cellDate = getCellDateFromIndex(selectedCellIndex)
+            if (cellDate && cellDate.getMonth() === currentMonth && cellDate.getFullYear() === currentYear) {
+                dayDetailDialog.selectedDate = cellDate.toISOString().split('T')[0]
+                dayDetailDialog.selectedDayData = getDayDataForDate(dayDetailDialog.selectedDate)
+                dayDetailDialog.open()
+            }
+        }
+    }
+    
+    function navigateToToday() {
+        let today = new Date()
+        currentDate = today
+        currentMonth = today.getMonth()
+        currentYear = today.getFullYear()
+        initializeSelection()
+    }
+    
+    function confirmCurrentDate() {
+        if (selectedCellIndex >= 0) {
+            var cellDate = getCellDateFromIndex(selectedCellIndex)
+            if (cellDate) {
+                // Show confirmation dialog with formatted date
+                dateConfirmDialog.confirmedDate = cellDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })
+                dateConfirmDialog.open()
+            }
+        }
+    }
+    
+    function getCellDateFromIndex(index) {
+        let firstDay = new Date(currentYear, currentMonth, 1)
+        let startDay = firstDay.getDay()
+        let dayOffset = index - startDay
+        return new Date(currentYear, currentMonth, 1 + dayOffset)
+    }
+    
+    function updateSelectedDateFromIndex() {
+        if (selectedCellIndex >= 0) {
+            var cellDate = getCellDateFromIndex(selectedCellIndex)
+            if (cellDate) {
+                selectedDateForTimers = cellDate.toISOString().split('T')[0]
+            }
+        }
+    }
+    
+    function getDayDataForDate(dateString) {
+        for (let i = 0; i < timerManager.dailyBreakdown.length; i++) {
+            let breakdown = timerManager.dailyBreakdown[i]
+            if (breakdown.date === dateString) {
+                return breakdown
+            }
+        }
+        return null
+    }
+    
+    FocusScope {
+        anchors.fill: parent
+        focus: true
+        
+        // Keyboard navigation
+        Keys.onPressed: function(event) {
+            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down ||
+                event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                event.accepted = true
+                var direction = {
+                    [Qt.Key_Up]: "up",
+                    [Qt.Key_Down]: "down", 
+                    [Qt.Key_Left]: "left",
+                    [Qt.Key_Right]: "right"
+                }[event.key]
+                navigateGrid(direction)
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Space) {
+                event.accepted = true
+                selectCurrentCell()
+            } else if (event.key === Qt.Key_Home) {
+                event.accepted = true
+                navigateToToday()
+            } else if (event.key === Qt.Key_D && event.modifiers === Qt.NoModifier) {
+                event.accepted = true
+                confirmCurrentDate()
+            }
+        }
+        
+        Rectangle {
+            anchors.fill: parent
+            color: backgroundColor
+            
+            RowLayout {
+            anchors.fill: parent
+            spacing: 0
+            
+            // Collapsible Sidebar for Timers
+            Rectangle {
+                id: sidebar
+                Layout.preferredWidth: sidebarExpanded ? 350 : 50
+                Layout.minimumWidth: 50
+                Layout.maximumWidth: 350
+                Layout.fillHeight: true
+                color: Qt.darker(backgroundColor, 1.1)
+                border.color: Qt.darker(backgroundColor, 1.2)
+                border.width: 1
+                clip: true
+                
+                Behavior on Layout.preferredWidth {
+                    NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+                }
+                
+                Item {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    
+                    Column {
+                        width: parent.width
+                        height: parent.height
+                        spacing: 10
+                        
+                        // Sidebar Toggle
+                        Button {
+                            width: 30
+                            height: 30
+                            background: Rectangle {
+                                color: parent.pressed ? Qt.darker(accentColor) : accentColor
+                                radius: 15
+                            }
+                            contentItem: Text {
+                                text: sidebarExpanded ? "←" : "→"
+                                color: "white"
+                                font.pixelSize: 16
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: sidebarExpanded = !sidebarExpanded
+                        }
+                        
+                        // Sidebar Content (only visible when expanded)
+                        Item {
+                            width: parent.width
+                            height: parent.height - 50
+                            visible: sidebarExpanded
+                            clip: true
+                            
+                            Column {
+                                anchors.fill: parent
+                                spacing: 15
+                                
+                                Column {
+                                    width: parent.width
+                                    spacing: 10
+                                    
+                                    Text {
+                                        text: "Active Timers"
+                                        font.pixelSize: 18
+                                        font.bold: true
+                                        color: textColor
+                                        elide: Text.ElideRight
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                    }
+                                    
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 40
+                                        color: Qt.lighter(backgroundColor, 1.2)
+                                        radius: 6
+                                        border.color: Qt.darker(backgroundColor, 1.3)
+                                        border.width: 1
+                                        
+                                        Text {
+                                            text: {
+                                                let date = new Date(selectedDateForTimers + "T00:00:00")
+                                                let today = new Date()
+                                                let isToday = date.toDateString() === today.toDateString()
+                                                if (isToday) {
+                                                    return "Today's Time"
+                                                } else {
+                                                    return date.toLocaleDateString('en-US', { 
+                                                        weekday: 'short',
+                                                        month: 'short', 
+                                                        day: 'numeric' 
+                                                    })
+                                                }
+                                            }
+                                            font.pixelSize: 14
+                                            font.bold: true
+                                            color: textColor
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+                                
+                                // Timer Controls
+                                Flow {
+                                    width: parent.width
+                                    spacing: 8
+                                    
+                                    
+                                    Button {
+                                        text: "+ Timer"
+                                        font.pixelSize: 12
+                                        width: Math.min(100, (parent.width - 16) / 2)
+                                        height: 32
+                                        background: Rectangle {
+                                            color: parent.pressed ? Qt.darker(accentColor) : accentColor
+                                            radius: 4
+                                        }
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "white"
+                                            font.pixelSize: 12
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+                                        onClicked: addTimerDialog.open()
+                                    }
+                                    
+                                    Button {
+                                        text: "+ Count"
+                                        font.pixelSize: 12
+                                        width: Math.min(100, (parent.width - 16) / 2)
+                                        height: 32
+                                        background: Rectangle {
+                                            color: parent.pressed ? Qt.darker(successColor) : successColor
+                                            radius: 4
+                                        }
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "white"
+                                            font.pixelSize: 12
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+                                        onClicked: addCountdownDialog.open()
+                                    }
+                                }
+                                
+                                Button {
+                                    text: "Reset Data"
+                                    font.pixelSize: 12
+                                    width: Math.min(150, parent.width)
+                                    height: 32
+                                    
+                                    background: Rectangle {
+                                        color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
+                                        radius: 4
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: "white"
+                                        font.pixelSize: 12
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                    onClicked: resetDataDialog.open()
+                                }
+                                
+                                // Navigation Help
+                                Rectangle {
+                                    width: parent.width
+                                    height: 140
+                                    color: Qt.lighter(backgroundColor, 1.1)
+                                    radius: 6
+                                    border.color: Qt.darker(backgroundColor, 1.2)
+                                    border.width: 1
+                                    
+                                    Column {
+                                        width: parent.width - 16
+                                        height: parent.height - 16
+                                        x: 8
+                                        y: 8
+                                        spacing: 4
+                                        
+                                        Text {
+                                            text: "Keyboard Navigation"
+                                            font.pixelSize: 11
+                                            font.bold: true
+                                            color: textColor
+                                        }
+                                        
+                                        Text {
+                                            text: "Arrow Keys: Navigate dates"
+                                            font.pixelSize: 9
+                                            color: textColor
+                                            opacity: 0.8
+                                        }
+                                        
+                                        Text {
+                                            text: "Enter/Space: View day details"
+                                            font.pixelSize: 9
+                                            color: textColor
+                                            opacity: 0.8
+                                        }
+                                        
+                                        Text {
+                                            text: "Home: Jump to today"
+                                            font.pixelSize: 9
+                                            color: textColor
+                                            opacity: 0.8
+                                        }
+                                        
+                                        Text {
+                                            text: "D: Confirm current date"
+                                            font.pixelSize: 9
+                                            color: textColor
+                                            opacity: 0.8
+                                        }
+                                        
+                                        Rectangle {
+                                            width: parent.width
+                                            height: 1
+                                            color: Qt.darker(backgroundColor, 1.3)
+                                            opacity: 0.5
+                                        }
+                                        
+                                        Text {
+                                            text: {
+                                                if (selectedCellIndex >= 0) {
+                                                    var cellDate = getCellDateFromIndex(selectedCellIndex)
+                                                    if (cellDate) {
+                                                        return "Selected: " + cellDate.toLocaleDateString('en-US', { 
+                                                            month: 'short', 
+                                                            day: 'numeric' 
+                                                        })
+                                                    }
+                                                }
+                                                return "No date selected"
+                                            }
+                                            font.pixelSize: 9
+                                            color: primaryColor
+                                            font.bold: true
+                                        }
+                                    }
+                                }
+                                
+                                // Selected Date Time Summary
+                                Rectangle {
+                                    width: parent.width
+                                    height: 80
+                                    color: Qt.lighter(primaryColor, 1.9)
+                                    radius: 6
+                                    border.color: Qt.darker(primaryColor, 1.1)
+                                    border.width: 1
+                                    
+                                    Column {
+                                        width: parent.width
+                                        height: parent.height
+                                        spacing: 5
+                                        
+                                        Text {
+                                            text: "Time Tracked:"
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                            color: textColor
+                                            
+                                        }
+                                        
+                                        Text {
+                                            text: {
+                                                // Find the day data for selected date
+                                                for (let i = 0; i < timerManager.dailyBreakdown.length; i++) {
+                                                    let breakdown = timerManager.dailyBreakdown[i]
+                                                    if (breakdown.date === selectedDateForTimers) {
+                                                        return breakdown.totalHours
+                                                    }
+                                                }
+                                                return "0.0h"
+                                            }
+                                            font.pixelSize: 18
+                                            font.bold: true
+                                            color: primaryColor
+                                            
+                                        }
+                                        
+                                        Text {
+                                            text: {
+                                                // Show top project for selected date
+                                                for (let i = 0; i < timerManager.dailyBreakdown.length; i++) {
+                                                    let breakdown = timerManager.dailyBreakdown[i]
+                                                    if (breakdown.date === selectedDateForTimers) {
+                                                        if (breakdown.projects && breakdown.projects.length > 0 && breakdown.projects[0].name !== "No work sessions") {
+                                                            return "Top: " + breakdown.projects[0].name
+                                                        }
+                                                    }
+                                                }
+                                                return "No work tracked"
+                                            }
+                                            font.pixelSize: 10
+                                            color: textColor
+                                            opacity: 0.8
+                                            
+                                            elide: Text.ElideRight
+                                            width: parent.parent.width - 20
+                                        }
+                                    }
+                                }
+                                
+                                // Timers List Container
+                                Item {
+                                    width: parent.width
+                                    height: parent.height - 370
+                                    clip: true
+                                    
+                                    ScrollView {
+                                        anchors.fill: parent
+                                        contentWidth: width
+                                        clip: true
+                                        
+                                        ListView {
+                                            id: timersListView
+                                            width: parent.width
+                                            model: timerManager.timers
+                                            spacing: 10
+                                            clip: true
+                                            
+                                            delegate: TimerCard {
+                                                width: Math.min(timersListView.width, 330)
+                                                
+                                                timerItem: modelData
+                                                onDeleteTimer: timerManager.deleteTimer(timerItem.id)
+                                                onStartTimer: timerManager.startTimer(timerItem.id)
+                                                onStopTimer: timerManager.stopTimer(timerItem.id)
+                                                onResetTimer: timerManager.resetTimer(timerItem.id)
+                                                onAdjustTime: timerManager.adjustTime(timerItem.id, seconds)
+                                                onSetCountdown: timerManager.setCountdownTime(timerItem.id, seconds)
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Empty state
+                                Item {
+                                    width: parent.width
+                                    height: 60
+                                    visible: timerManager.timers.length === 0
+                                    
+                                    Text {
+                                        text: "No timers yet\nClick + Timer to start"
+                                        font.pixelSize: 14
+                                        color: textColor
+                                        opacity: 0.6
+                                        horizontalAlignment: Text.AlignHCenter
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width - 20
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Main Calendar Area
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: backgroundColor
+                
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 20
+                    
+                    // Header with Title and Navigation
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 80
+                        color: primaryColor
+                        radius: 10
+                        
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            
+                            Text {
+                                text: "Father Time"
+                                font.pixelSize: 28
+                                font.bold: true
+                                color: "white"
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            // Calendar Navigation
+                            Row {
+                                spacing: 15
+                                
+                                Button {
+                                    text: "◀"
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                    background: Rectangle {
+                                        color: parent.pressed ? Qt.darker("white", 1.2) : "white"
+                                        radius: 6
+                                        opacity: 0.9
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: primaryColor
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    onClicked: {
+                                        if (currentMonth === 0) {
+                                            currentMonth = 11
+                                            currentYear--
+                                        } else {
+                                            currentMonth--
+                                        }
+                                        currentDate = new Date(currentYear, currentMonth, 1)
+                                        // Reset navigation selection when changing months
+                                        selectedCellIndex = -1
+                                    }
+                                }
+                                
+                                Text {
+                                    text: Qt.formatDate(currentDate, "MMMM yyyy")
+                                    font.pixelSize: 20
+                                    font.bold: true
+                                    color: "white"
+                                    
+                                }
+                                
+                                Button {
+                                    text: "▶"
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                    background: Rectangle {
+                                        color: parent.pressed ? Qt.darker("white", 1.2) : "white"
+                                        radius: 6
+                                        opacity: 0.9
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: primaryColor
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    onClicked: {
+                                        if (currentMonth === 11) {
+                                            currentMonth = 0
+                                            currentYear++
+                                        } else {
+                                            currentMonth++
+                                        }
+                                        currentDate = new Date(currentYear, currentMonth, 1)
+                                        // Reset navigation selection when changing months
+                                        selectedCellIndex = -1
+                                    }
+                                }
+                                
+                                Button {
+                                    text: "Today"
+                                    font.pixelSize: 14
+                                    background: Rectangle {
+                                        color: parent.pressed ? Qt.darker(accentColor) : accentColor
+                                        radius: 6
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: "white"
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    onClicked: {
+                                        let today = new Date()
+                                        currentDate = today
+                                        currentMonth = today.getMonth()
+                                        currentYear = today.getFullYear()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Calendar Grid
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 400
+                        color: "white"
+                        radius: 10
+                        border.color: Qt.darker(backgroundColor, 1.2)
+                        border.width: 1
+                        clip: true
+                        
+                        Item {
+                            anchors.fill: parent
+                            anchors.margins: 15
+                            
+                            GridLayout {
+                                anchors.fill: parent
+                                columns: 7
+                                rows: 8
+                                columnSpacing: 2
+                                rowSpacing: 2
+                                
+                                // Day Headers
+                                Repeater {
+                                    model: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 40
+                                        Layout.minimumHeight: 35
+                                        Layout.maximumHeight: 50
+                                        color: primaryColor
+                                        radius: 4
+                                        clip: true
+                                        
+                                        Text {
+                                            text: modelData
+                                            font.pixelSize: Math.min(14, parent.width / 4)
+                                            font.bold: true
+                                            color: "white"
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+                            
+                                // Calendar Days
+                                Repeater {
+                                    model: 42 // 6 weeks * 7 days
+                                    
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        Layout.minimumWidth: 80
+                                        Layout.minimumHeight: 60
+                                        clip: true
+                                        
+                                        property date cellDate: {
+                                            let firstDay = new Date(currentYear, currentMonth, 1)
+                                            let startDay = firstDay.getDay()
+                                            let dayOffset = index - startDay
+                                            let cellDate = new Date(currentYear, currentMonth, 1 + dayOffset)
+                                            return cellDate
+                                        }
+                                        
+                                        property int dayNumber: cellDate.getDate()
+                                        
+                                        property bool isCurrentMonth: {
+                                            return cellDate.getMonth() === currentMonth && cellDate.getFullYear() === currentYear
+                                        }
+                                        
+                                        property string dateString: {
+                                            return cellDate.toISOString().split('T')[0]
+                                        }
+                                        
+                                        property var dayData: {
+                                            if (!isCurrentMonth) return null
+                                            for (let i = 0; i < timerManager.dailyBreakdown.length; i++) {
+                                                let breakdown = timerManager.dailyBreakdown[i]
+                                                if (breakdown.date === dateString) {
+                                                    return breakdown
+                                                }
+                                            }
+                                            return null
+                                        }
+                                        
+                                        property bool isToday: {
+                                            if (!isCurrentMonth) return false
+                                            let cellDate = new Date(currentYear, currentMonth, dayNumber)
+                                            let today = new Date()
+                                            return cellDate.toDateString() === today.toDateString()
+                                        }
+                                        
+                                        property bool isSelectedForTimers: {
+                                            return dateString === selectedDateForTimers
+                                        }
+                                        
+                                        property bool isNavigationSelected: {
+                                            return index === selectedCellIndex
+                                        }
+                                        
+                                        color: {
+                                            if (!isCurrentMonth) {
+                                                return Qt.lighter(backgroundColor, 1.5) // Previous/next month days
+                                            }
+                                            
+                                            if (isNavigationSelected) {
+                                                // Navigation selection - bright highlight
+                                                return Qt.lighter(primaryColor, 1.5)
+                                            }
+                                            
+                                            if (isToday) {
+                                                return successColor
+                                            }
+                                            
+                                            if (isSelectedForTimers && !isToday && !isNavigationSelected) {
+                                                return Qt.lighter(primaryColor, 1.8) // Selected date for timer viewing
+                                            }
+                                            
+                                            if (dayData && dayData.rawTotalHours > 0) {
+                                                let hours = dayData.rawTotalHours
+                                                if (hours >= 6) return Qt.lighter(accentColor, 1.6)      // High productivity
+                                                if (hours >= 4) return Qt.lighter(accentColor, 1.8)      // Medium productivity  
+                                                if (hours >= 1) return Qt.lighter(warningColor, 1.8)     // Low productivity
+                                                return Qt.lighter(warningColor, 1.9)                     // Minimal work
+                                            }
+                                            
+                                            return "white" // No work
+                                        }
+                                        
+                                        radius: 6
+                                        border.color: {
+                                            if (isNavigationSelected) {
+                                                return primaryColor
+                                            } else if (isSelectedForTimers) {
+                                                return accentColor
+                                            } else {
+                                                return Qt.darker(backgroundColor, 1.1)
+                                            }
+                                        }
+                                        border.width: {
+                                            if (isNavigationSelected) {
+                                                return 4
+                                            } else if (isSelectedForTimers) {
+                                                return 3
+                                            } else {
+                                                return 1
+                                            }
+                                        }
+                                        
+                                        Column {
+                                            width: parent.width - 10
+                                            height: parent.height - 10
+                                            x: 5
+                                            y: 5
+                                            spacing: 2
+                                            
+                                            // Date Number - Always Visible
+                                            Text {
+                                                text: dayNumber
+                                                font.pixelSize: 16
+                                                font.bold: isToday || isCurrentMonth
+                                                color: {
+                                                    if (isToday) return "white"
+                                                    if (isCurrentMonth) return textColor
+                                                    return Qt.darker(textColor, 1.3)
+                                                }
+                                                opacity: isCurrentMonth ? 1.0 : 0.6
+                                            }
+                                            
+                                            // Work hours indicator
+                                            Rectangle {
+                                                width: parent.width
+                                                height: 3
+                                                radius: 1
+                                                color: isToday ? "white" : accentColor
+                                                visible: isCurrentMonth && dayData && dayData.rawTotalHours > 0
+                                                opacity: 0.7
+                                            }
+                                            
+                                            // Total hours display
+                                            Text {
+                                                text: {
+                                                    if (!isCurrentMonth || !dayData) return ""
+                                                    let hours = dayData.rawTotalHours
+                                                    if (hours > 0) return hours.toFixed(1) + "h"
+                                                    return ""
+                                                }
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                                color: isToday ? "white" : textColor
+                                                opacity: 0.9
+                                            }
+                                            
+                                            // Top project indicator
+                                            Text {
+                                                text: {
+                                                    if (!isCurrentMonth || !dayData) return ""
+                                                    let projects = dayData.projects
+                                                    if (projects && projects.length > 0 && projects[0].name !== "No work sessions") {
+                                                        return projects[0].name.length > 8 ? projects[0].name.substring(0, 8) + "..." : projects[0].name
+                                                    }
+                                                    return ""
+                                                }
+                                                font.pixelSize: 9
+                                                color: isToday ? "white" : textColor
+                                                opacity: 0.7
+                                                width: parent.width
+                                                elide: Text.ElideRight
+                                                wrapMode: Text.NoWrap
+                                            }
+                                        
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                if (parent.isCurrentMonth) {
+                                                    // Update navigation selection to this cell 
+                                                    selectedCellIndex = index
+                                                    
+                                                    // Update selected date for timer display
+                                                    selectedDateForTimers = parent.dateString
+                                                    
+                                                    // Also set day detail dialog data
+                                                    dayDetailDialog.selectedDate = parent.dateString
+                                                    dayDetailDialog.selectedDayData = parent.dayData
+                                                } else {
+                                                    // Navigate to the clicked month
+                                                    if (parent.cellDate) {
+                                                        let clickedDate = parent.cellDate
+                                                        currentMonth = clickedDate.getMonth()
+                                                        currentYear = clickedDate.getFullYear()
+                                                        currentDate = new Date(currentYear, currentMonth, 1)
+                                                        // Reset navigation
+                                                        selectedCellIndex = -1
+                                                    }
+                                                }
+                                            }
+                                            onDoubleClicked: {
+                                                if (parent.isCurrentMonth) {
+                                                    dayDetailDialog.open()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Add Timer Dialog
+    Dialog {
+        id: addTimerDialog
+        title: "Add Stopwatch Timer"
+        anchors.centerIn: parent
+        width: Math.min(350, window.width - 40)
+        height: Math.min(200, window.height - 40)
+        clip: true
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 20
+                
+                TextField {
+                    id: timerNameField
+                    width: parent.width
+                    height: 40
+                    placeholderText: "Timer name..."
+                    font.pixelSize: 14
+                    clip: true
+                }
+                
+                Item {
+                    width: parent.width
+                    height: parent.height - 80
+                }
+                
+                Row {
+                    width: parent.width
+                    height: 40
+                    spacing: 10
+                    layoutDirection: Qt.RightToLeft
+                    
+                    Button {
+                        text: "Add"
+                        width: Math.min(80, (parent.width - 10) / 2)
+                        height: 40
+                        enabled: timerNameField.text.trim() !== ""
+                        background: Rectangle {
+                            color: parent.enabled ? (parent.pressed ? Qt.darker(accentColor) : accentColor) : "#bdc3c7"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: {
+                            timerManager.addTimer(timerNameField.text.trim(), "stopwatch")
+                            addTimerDialog.close()
+                            timerNameField.text = ""
+                        }
+                    }
+                    
+                    Button {
+                        text: "Cancel"
+                        width: Math.min(80, (parent.width - 10) / 2)
+                        height: 40
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker("#bdc3c7") : "#bdc3c7"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: {
+                            addTimerDialog.close()
+                            timerNameField.text = ""
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Add Countdown Dialog
+    Dialog {
+        id: addCountdownDialog
+        title: "Add Countdown Timer"
+        anchors.centerIn: parent
+        width: Math.min(400, window.width - 40)
+        height: Math.min(280, window.height - 40)
+        clip: true
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 15
+                
+                TextField {
+                    id: countdownNameField
+                    width: parent.width
+                    height: 40
+                    placeholderText: "Timer name..."
+                    font.pixelSize: 14
+                    clip: true
+                }
+                
+                Text {
+                    text: "Set Duration:"
+                    font.pixelSize: 14
+                    color: textColor
+                    width: parent.width
+                }
+                
+                Flow {
+                    width: parent.width
+                    spacing: 8
+                    
+                    SpinBox {
+                        id: hoursSpinBox
+                        from: 0
+                        to: 23
+                        width: Math.min(80, (parent.width - 16) / 3)
+                        textFromValue: function(value, locale) { return value + "h" }
+                    }
+                    
+                    SpinBox {
+                        id: minutesSpinBox
+                        from: 0
+                        to: 59
+                        width: Math.min(80, (parent.width - 16) / 3)
+                        textFromValue: function(value, locale) { return value + "m" }
+                    }
+                    
+                    SpinBox {
+                        id: secondsSpinBox
+                        from: 0
+                        to: 59
+                        width: Math.min(80, (parent.width - 16) / 3)
+                        textFromValue: function(value, locale) { return value + "s" }
+                    }
+                }
+                
+                Item {
+                    width: parent.width
+                    height: parent.height - 180
+                }
+                
+                Row {
+                    width: parent.width
+                    height: 40
+                    spacing: 10
+                    layoutDirection: Qt.RightToLeft
+                    
+                    Button {
+                        text: "Add"
+                        width: Math.min(80, (parent.width - 10) / 2)
+                        height: 40
+                        enabled: countdownNameField.text.trim() !== "" && 
+                                (hoursSpinBox.value > 0 || minutesSpinBox.value > 0 || secondsSpinBox.value > 0)
+                        background: Rectangle {
+                            color: parent.enabled ? (parent.pressed ? Qt.darker(successColor) : successColor) : "#bdc3c7"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: {
+                            let totalSeconds = hoursSpinBox.value * 3600 + minutesSpinBox.value * 60 + secondsSpinBox.value
+                            timerManager.addTimer(countdownNameField.text.trim(), "countdown")
+                            let newTimer = timerManager.timers[timerManager.timers.length - 1]
+                            timerManager.setCountdownTime(newTimer.id, totalSeconds)
+                            addCountdownDialog.close()
+                            countdownNameField.text = ""
+                            hoursSpinBox.value = 0
+                            minutesSpinBox.value = 0
+                            secondsSpinBox.value = 0
+                        }
+                    }
+                    
+                    Button {
+                        text: "Cancel"
+                        width: Math.min(80, (parent.width - 10) / 2)
+                        height: 40
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker("#bdc3c7") : "#bdc3c7"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: {
+                            addCountdownDialog.close()
+                            countdownNameField.text = ""
+                            hoursSpinBox.value = 0
+                            minutesSpinBox.value = 0
+                            secondsSpinBox.value = 0
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Reset Data Confirmation Dialog
+    Dialog {
+        id: resetDataDialog
+        title: "Reset All Data"
+        anchors.centerIn: parent
+        width: Math.min(450, window.width - 40)
+        height: Math.min(300, window.height - 40)
+        clip: true
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 20
+                
+                Text {
+                    text: "Are you sure you want to reset all data?"
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: textColor
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+                
+                ScrollView {
+                    width: parent.width
+                    height: parent.height - 140
+                    contentWidth: width
+                    clip: true
+                    
+                    Text {
+                        text: "This will permanently delete:\n• All timers\n• All work sessions\n• All daily statistics\n\nThis action cannot be undone."
+                        font.pixelSize: 14
+                        color: dangerColor
+                        wrapMode: Text.WordWrap
+                        width: parent.width
+                    }
+                }
+                
+                Row {
+                    width: parent.width
+                    height: 40
+                    spacing: 10
+                    layoutDirection: Qt.RightToLeft
+                    
+                    Button {
+                        text: "Reset All Data"
+                        width: Math.min(120, (parent.width - 10) / 2)
+                        height: 40
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: {
+                            timerManager.resetAllData()
+                            resetDataDialog.close()
+                        }
+                    }
+                    
+                    Button {
+                        text: "Cancel"
+                        width: Math.min(80, (parent.width - 10) / 2)
+                        height: 40
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker("#bdc3c7") : "#bdc3c7"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        onClicked: resetDataDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    
+    // Day Detail Dialog
+    Dialog {
+        id: dayDetailDialog
+        title: "Day Details"
+        anchors.centerIn: parent
+        width: Math.min(500, window.width - 40)
+        height: Math.min(500, window.height - 40)
+        clip: true
+        
+        property string selectedDate: ""
+        property var selectedDayData: null
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 15
+                
+                // Date Header
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    color: primaryColor
+                    radius: 8
+                    clip: true
+                    
+                    Column {
+                        // anchors.centerIn removed for Column compatibility
+                        spacing: 5
+                        width: parent.width - 20
+                        
+                        Text {
+                            text: {
+                                if (!dayDetailDialog.selectedDate) return ""
+                                let date = new Date(dayDetailDialog.selectedDate + "T00:00:00")
+                                return date.toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                })
+                            }
+                            font.pixelSize: Math.min(18, parent.width / 15)
+                            font.bold: true
+                            color: "white"
+                            
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                        }
+                        
+                        Text {
+                            text: dayDetailDialog.selectedDayData ? "Total: " + dayDetailDialog.selectedDayData.totalHours : "No work sessions"
+                            font.pixelSize: Math.min(14, parent.width / 20)
+                            color: "white"
+                            opacity: 0.9
+                            
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+                
+                // Projects List
+                Item {
+                    width: parent.width
+                    height: parent.height - 160
+                    clip: true
+                    
+                    ScrollView {
+                        anchors.fill: parent
+                        contentWidth: width
+                        clip: true
+                        
+                        Column {
+                            width: parent.width
+                            spacing: 10
+                            
+                            Text {
+                                text: "Project Breakdown:"
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: textColor
+                                width: parent.width
+                                elide: Text.ElideRight
+                                visible: dayDetailDialog.selectedDayData && dayDetailDialog.selectedDayData.projects && dayDetailDialog.selectedDayData.projects.length > 0 && !(dayDetailDialog.selectedDayData.projects.length === 1 && dayDetailDialog.selectedDayData.projects[0].name === "No work sessions")
+                            }
+                            
+                            Repeater {
+                                model: dayDetailDialog.selectedDayData ? dayDetailDialog.selectedDayData.projects : []
+                                
+                                Rectangle {
+                                    width: parent.width
+                                    height: 60
+                                    color: Qt.lighter(backgroundColor, 1.1)
+                                    radius: 8
+                                    border.color: Qt.darker(backgroundColor, 1.2)
+                                    border.width: 1
+                                    clip: true
+                                    visible: modelData.name !== "No work sessions"
+                                    
+                                    Row {
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 15
+                                        
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 15
+                                        spacing: 15
+                                        
+                                        Rectangle {
+                                            width: 12
+                                            height: 12
+                                            radius: 6
+                                            color: accentColor
+                                            
+                                        }
+                                        
+                                        Column {
+                                            spacing: 2
+                                            
+                                            width: parent.width - 27
+                                            
+                                            Text {
+                                                text: modelData.name
+                                                font.pixelSize: 14
+                                                font.bold: true
+                                                color: textColor
+                                                width: parent.width
+                                                elide: Text.ElideRight
+                                                wrapMode: Text.NoWrap
+                                            }
+                                            
+                                            Text {
+                                                text: modelData.hours
+                                                font.pixelSize: 12
+                                                color: textColor
+                                                opacity: 0.7
+                                                font.family: "monospace"
+                                                width: parent.width
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Empty state
+                            Rectangle {
+                                width: parent.width
+                                height: 120
+                                color: Qt.lighter(backgroundColor, 1.1)
+                                radius: 8
+                                border.color: Qt.darker(backgroundColor, 1.2)
+                                border.width: 1
+                                visible: !dayDetailDialog.selectedDayData || !dayDetailDialog.selectedDayData.projects || dayDetailDialog.selectedDayData.projects.length === 0 || (dayDetailDialog.selectedDayData.projects.length === 1 && dayDetailDialog.selectedDayData.projects[0].name === "No work sessions")
+                                
+                                Column {
+                                    // anchors.centerIn removed for Column compatibility
+                                    spacing: 10
+                                    width: parent.width - 20
+                                    
+                                    Text {
+                                        text: "📅"
+                                        font.pixelSize: 32
+                                        
+                                    }
+                                    
+                                    Text {
+                                        text: "No work sessions on this day"
+                                        font.pixelSize: 14
+                                        color: textColor
+                                        opacity: 0.6
+                                        
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Close Button
+                Button {
+                    text: "Close"
+                    width: Math.min(100, parent.width)
+                    height: 40
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? Qt.darker(primaryColor) : primaryColor
+                        radius: 6
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    onClicked: dayDetailDialog.close()
+                }
+            }
+        }
+    }
+    
+    // Date Confirmation Dialog
+    Dialog {
+        id: dateConfirmDialog
+        title: "Current Date"
+        anchors.centerIn: parent
+        width: Math.min(350, window.width - 40)
+        height: Math.min(150, window.height - 40)
+        clip: true
+        
+        property string confirmedDate: ""
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 20
+                
+                Text {
+                    text: confirmedDate
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: textColor
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                    
+                }
+                
+                Item {
+                    width: parent.width
+                    height: parent.height - 80
+                }
+                
+                Button {
+                    text: "OK"
+                    width: Math.min(80, parent.width)
+                    height: 40
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? Qt.darker(primaryColor) : primaryColor
+                        radius: 6
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    onClicked: dateConfirmDialog.close()
+                }
+            }
+        }
+        }
+    }
+}

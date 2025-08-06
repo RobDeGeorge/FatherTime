@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Activate virtual environment and run Father Time
+source venv/bin/activate
+
+# Force X11 backend for better compatibility
+export QT_QPA_PLATFORM=xcb
+
+python main.py

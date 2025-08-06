@@ -1,0 +1,25 @@
+{
+  "timers": [
+    {
+      "id": 1,
+      "name": "Anchorage",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "is_running": false,
+      "created_at": "2025-08-06T10:16:57.966472",
+      "last_started": "2025-08-06T10:17:06.389424"
+    },
+    {
+      "id": 2,
+      "name": "anch",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "is_running": false,
+      "created_at": "2025-08-06T11:16:07.886985",
+      "last_started": null
+    }
+  ],
+  "next_id": 3
+}
