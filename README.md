@@ -57,3 +57,4 @@ _FatherTime/
 │   └── TimerCard.qml   # Individual timer component
 └── timers.json         # Data storage (created automatically)
 ```# FatherTime
+# FatherTime
