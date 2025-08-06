@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build script for creating FatherTime executable."""
+"""Simple build script for Windows without spec file."""
 
 import os
 import shutil
@@ -15,47 +15,41 @@ def clean_build_dirs():
         if os.path.exists(dir_name):
             print(f"Cleaning {dir_name}/")
             shutil.rmtree(dir_name)
-    
-    # Clean .pyc files
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            if file.endswith(".pyc"):
-                os.remove(os.path.join(root, file))
 
 
-def build_executable():
-    """Build the executable using PyInstaller."""
-    print("Building FatherTime executable...")
+def build_simple():
+    """Build executable using direct PyInstaller command."""
+    print("Building FatherTime executable (simple method)...")
     
-    # Ensure data directory exists (PyInstaller needs it to exist)
+    # Ensure data directory exists
     Path("data").mkdir(exist_ok=True)
     
-    # Choose the right spec file based on platform
-    if sys.platform.startswith('win'):
-        spec_file = "build-windows.spec"
-        print("🪟 Using Windows-optimized build configuration")
-    else:
-        spec_file = "build.spec"
-        print("🐧 Using cross-platform build configuration")
-    
-    # Check if spec file exists
-    if not os.path.exists(spec_file):
-        print(f"❌ Spec file {spec_file} not found!")
-        print("Available spec files:")
-        for f in os.listdir("."):
-            if f.endswith(".spec"):
-                print(f"  - {f}")
-        return False
-    
-    # Run PyInstaller with absolute path to spec file
-    spec_path = os.path.abspath(spec_file)
+    # Basic PyInstaller command
     cmd = [
         sys.executable, "-m", "PyInstaller",
+        "--onefile",
+        "--windowed",
+        "--name=FatherTime",
+        "--add-data=ui;ui",
+        "--add-data=data;data", 
+        "--add-data=src/config;src/config",
+        "--hidden-import=PySide6.QtCore",
+        "--hidden-import=PySide6.QtGui",
+        "--hidden-import=PySide6.QtQml",
+        "--hidden-import=PySide6.QtQuick",
+        "--hidden-import=PySide6.QtQuickControls2",
+        "--hidden-import=src.fathertime.config",
+        "--hidden-import=src.fathertime.config_manager", 
+        "--hidden-import=src.fathertime.database",
+        "--hidden-import=src.fathertime.exceptions",
+        "--hidden-import=src.fathertime.logger",
+        "--hidden-import=src.fathertime.timer_manager",
         "--clean",
-        "--noconfirm", 
-        spec_path
+        "--noconfirm",
+        "main.py"
     ]
     
+    print("Running PyInstaller...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     
     if result.returncode == 0:
@@ -65,34 +59,30 @@ def build_executable():
             print("🎉 Windows executable: dist/FatherTime.exe")
         elif os.path.exists("dist/FatherTime"):
             print("🎉 Executable: dist/FatherTime")
+        return True
     else:
         print("❌ Build failed!")
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
         return False
-    
-    return True
 
 
 def main():
     """Main build process."""
-    print("🔨 Starting FatherTime build process...")
+    print("🔨 Starting simple FatherTime build...")
     
-    # Check if PyInstaller is available
+    # Check PyInstaller
     try:
         import PyInstaller
         print(f"✅ PyInstaller {PyInstaller.__version__} found")
     except ImportError:
-        print("❌ PyInstaller not found. Installing...")
+        print("❌ Installing PyInstaller...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller>=5.0.0"])
     
-    # Clean previous builds
     clean_build_dirs()
     
-    # Build executable
-    if build_executable():
+    if build_simple():
         print("\n🎊 Build completed successfully!")
-        print("📦 You can find your executable in the dist/ directory")
     else:
         print("\n💥 Build failed!")
         sys.exit(1)

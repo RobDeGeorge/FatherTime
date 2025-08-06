@@ -65,15 +65,35 @@ make build
 ```
 
 ### Manual Build Process
+
+**Linux/Mac:**
 ```bash
 # Activate virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install build dependencies
 pip install pyinstaller>=5.0.0
 
 # Build executable
 python build.py
+```
+
+**Windows:**
+```cmd
+REM Activate virtual environment
+venv\Scripts\activate
+
+REM Install build dependencies
+pip install pyinstaller>=5.0.0
+
+REM Build executable (try multiple methods)
+python build.py
+
+REM Or use the Windows batch file
+build.bat
+
+REM Or try the simple build if spec file issues occur
+python build-simple.py
 ```
 
 ### Build Options
