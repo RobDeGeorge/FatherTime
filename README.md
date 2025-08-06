@@ -16,18 +16,43 @@ A clean, modern time tracker application built with PySide6 and QML. Track your 
 - Python 3.7+
 - PySide6
 
-## Installation
+## Installation and Setup
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/RobDeGeorge/FatherTime.git
+   cd FatherTime
+   ```
+
+2. **Create and activate virtual environment:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   make install
+   # or manually: pip install -r requirements.txt
+   ```
 
 ## Usage
 
-Run the application:
+### Running the Application
+
+**Option 1 - Using Makefile (recommended):**
 ```bash
-python run.py
+make run
+```
+
+**Option 2 - Using run script:**
+```bash
+./run
+```
+
+**Option 3 - Direct execution:**
+```bash
+python main.py
 ```
 
 ### Controls
@@ -41,20 +66,87 @@ python run.py
 
 ### Data Storage
 
-Timer data is automatically saved to `timers.json` in the application directory.
+Timer data is automatically saved to JSON files in the `data/` directory:
+- `data/timers.json` - Main timer data
+- `data/sessions.json` - Session history
+- `data/daily_timers.json` - Daily timer data
+- `data/daily_timer_states.json` - Daily timer states
 
-## Project Structure
+## Development
+
+### Available Make Commands
+
+```bash
+make help          # Show all available commands
+make install       # Install production dependencies
+make test          # Run tests
+make lint          # Run linting (flake8)
+make format        # Format code (black, isort)
+make type-check    # Run type checking (mypy)
+make qa            # Run all quality checks
+make clean         # Clean build artifacts
+make run           # Run the application
+```
+
+### Project Structure
 
 ```
-_FatherTime/
-├── main.py              # Application entry point
-├── run.py               # Convenience runner script
-├── timer_manager.py     # Timer logic and Qt integration
-├── database.py          # JSON database handler
-├── requirements.txt     # Python dependencies
-├── ui/
-│   ├── main.qml        # Main application UI
-│   └── TimerCard.qml   # Individual timer component
-└── timers.json         # Data storage (created automatically)
-```# FatherTime
-# FatherTime
+FatherTime/
+├── main.py                    # Application entry point
+├── run                        # Executable script to run the app
+├── Makefile                   # Build and development commands
+├── README.md                  # This file
+├── requirements.txt           # Python dependencies
+├── .gitignore                 # Git ignore patterns
+├── src/                       # Source code
+│   ├── fathertime/           # Main application package
+│   │   ├── __init__.py
+│   │   ├── config.py         # Configuration constants
+│   │   ├── config_manager.py # Configuration management
+│   │   ├── database.py       # JSON database operations
+│   │   ├── exceptions.py     # Custom exception classes
+│   │   ├── logger.py         # Logging setup
+│   │   └── timer_manager.py  # Timer logic and Qt integration
+│   └── config/               # Configuration files
+│       ├── config.json
+│       ├── pyproject.toml
+│       └── setup.cfg
+├── data/                      # Data files (auto-created)
+│   ├── timers.json
+│   ├── sessions.json
+│   ├── daily_timers.json
+│   └── daily_timer_states.json
+├── ui/                        # QML user interface files
+│   ├── main.qml              # Main application UI
+│   └── TimerCard.qml         # Individual timer component
+├── tests/                     # Test files
+│   ├── __init__.py
+│   ├── test_config_manager.py
+│   └── test_database.py
+├── docs/                      # Documentation
+│   └── CLEANUP_REPORT.md
+└── venv/                      # Virtual environment (excluded from git)
+```
+
+## Architecture
+
+The application follows a clean layered architecture:
+
+- **Foundation Layer**: `exceptions.py`, `logger.py`, `config.py`
+- **Data Layer**: `database.py`, `config_manager.py`
+- **Business Logic**: `timer_manager.py`
+- **Presentation**: `main.py`, QML files in `ui/`
+
+All dependencies flow in one direction with no circular imports, making the codebase maintainable and testable.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run quality checks: `make qa`
+5. Submit a pull request
+
+## License
+
+[Add your license information here]
