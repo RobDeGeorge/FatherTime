@@ -6,13 +6,13 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config import (
+from .config import (
     ARCHIVE_DIRECTORY,
     DEFAULT_DB_FILE,
     DEFAULT_SESSIONS_FILE,
 )
-from exceptions import DatabaseError, ValidationError
-from logger import logger
+from .exceptions import DatabaseError, ValidationError
+from .logger import logger
 
 
 class Database:

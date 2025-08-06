@@ -11,7 +11,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from database import Database
+from .database import Database
 
 
 class TimerItem(QObject):

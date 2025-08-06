@@ -10,11 +10,11 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
-from config import APP_NAME, QT_ENVIRONMENT
-from config_manager import ConfigManager
-from exceptions import FatherTimeError
-from logger import logger
-from timer_manager import TimerManager
+from src.fathertime.config import APP_NAME, QT_ENVIRONMENT
+from src.fathertime.config_manager import ConfigManager
+from src.fathertime.exceptions import FatherTimeError
+from src.fathertime.logger import logger
+from src.fathertime.timer_manager import TimerManager
 
 
 def setup_qt_environment() -> None:

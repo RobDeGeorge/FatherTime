@@ -6,9 +6,9 @@ from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Property, QObject, Signal
 
-from config import DEFAULT_COLORS, DEFAULT_CONFIG_FILE
-from exceptions import ConfigError
-from logger import logger
+from .config import DEFAULT_COLORS, DEFAULT_CONFIG_FILE
+from .exceptions import ConfigError
+from .logger import logger
 
 
 class ConfigManager(QObject):

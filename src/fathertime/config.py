@@ -8,12 +8,12 @@ APP_NAME = "Father Time"
 DEFAULT_WINDOW_WIDTH = 800
 DEFAULT_WINDOW_HEIGHT = 600
 
-# File paths
-DEFAULT_DB_FILE = "timers.json"
-DEFAULT_SESSIONS_FILE = "sessions.json"
-DEFAULT_STATS_FILE = "stats.json"
-DEFAULT_CONFIG_FILE = "config.json"
-ARCHIVE_DIRECTORY = "archive"
+# File paths (relative to project root)
+DEFAULT_DB_FILE = "data/timers.json"
+DEFAULT_SESSIONS_FILE = "data/sessions.json"
+DEFAULT_STATS_FILE = "data/stats.json"
+DEFAULT_CONFIG_FILE = "src/config/config.json"
+ARCHIVE_DIRECTORY = "data/archive"
 
 # Timer update intervals (milliseconds)
 TIMER_UPDATE_INTERVAL = 1000  # 1 second
