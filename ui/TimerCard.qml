@@ -167,9 +167,9 @@ Rectangle {
             }
             
             Button {
-                Layout.preferredWidth: 25
+                Layout.preferredWidth: 30
                 Layout.preferredHeight: 30
-                text: "-1s"
+                text: "-1h"
                 font.pixelSize: 8
                 focus: false
                 background: Rectangle {
@@ -183,13 +183,13 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: parent.font.pixelSize
                 }
-                onClicked: adjustTime(-1)
+                onClicked: adjustTime(-3600)
             }
             
             Button {
-                Layout.preferredWidth: 25
+                Layout.preferredWidth: 30
                 Layout.preferredHeight: 30
-                text: "+1s"
+                text: "+1h"
                 font.pixelSize: 8
                 focus: false
                 background: Rectangle {
@@ -203,7 +203,7 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: parent.font.pixelSize
                 }
-                onClicked: adjustTime(1)
+                onClicked: adjustTime(3600)
             }
             
             Button {

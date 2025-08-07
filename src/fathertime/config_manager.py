@@ -1,6 +1,7 @@
 """Configuration management for Father Time application."""
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -24,10 +25,15 @@ class ConfigManager(QObject):
         Args:
             config_file: Name of config file (uses default if None)
             data_dir: Directory for config file (uses current dir if None)
+            
+        Raises:
+            ConfigError: If paths contain invalid or dangerous components
         """
         super().__init__()
-        self.data_dir = Path(data_dir) if data_dir else Path.cwd()
-        self.config_file = self.data_dir / (config_file or DEFAULT_CONFIG_FILE)
+        self.data_dir = self._validate_and_resolve_path(data_dir)
+        self.config_file = self._validate_config_file_path(
+            config_file or DEFAULT_CONFIG_FILE
+        )
 
         try:
             self._colors = self._load_colors()
@@ -36,6 +42,89 @@ class ConfigManager(QObject):
             logger.error(f"Failed to load config: {e}")
             self._colors = DEFAULT_COLORS.copy()
             logger.info("Using default colors")
+
+    def _validate_and_resolve_path(self, data_dir: Optional[str]) -> Path:
+        """Validate and resolve data directory path securely.
+        
+        Args:
+            data_dir: User-provided directory path
+            
+        Returns:
+            Validated and resolved Path object
+            
+        Raises:
+            ConfigError: If path is invalid or contains dangerous components
+        """
+        if data_dir is None:
+            return Path.cwd()
+            
+        # Convert to Path and resolve to handle relative paths
+        try:
+            path = Path(data_dir).resolve()
+        except (OSError, ValueError) as e:
+            raise ConfigError(f"Invalid directory path '{data_dir}': {e}") from e
+            
+        # Security checks
+        path_str = str(path)
+        
+        # Check for path traversal attempts
+        dangerous_components = ['..', '~', '$']
+        if any(component in data_dir for component in dangerous_components):
+            raise ConfigError(
+                f"Directory path '{data_dir}' contains dangerous components"
+            )
+            
+        # Ensure path is not pointing to sensitive system directories
+        sensitive_paths = ['/etc', '/root', '/var/log', '/usr', '/bin', '/sbin']
+        if any(path_str.startswith(sensitive) for sensitive in sensitive_paths):
+            raise ConfigError(
+                f"Directory path '{data_dir}' points to restricted system directory"
+            )
+            
+        # Ensure path length is reasonable
+        if len(path_str) > 255:
+            raise ConfigError(f"Directory path too long: {len(path_str)} characters")
+            
+        return path
+        
+    def _validate_config_file_path(self, config_file: str) -> Path:
+        """Validate config file name securely.
+        
+        Args:
+            config_file: Config file name or relative path
+            
+        Returns:
+            Validated config file Path object
+            
+        Raises:
+            ConfigError: If filename is invalid or dangerous
+        """
+        if not config_file:
+            raise ConfigError("Config file name cannot be empty")
+            
+        # Security checks for filename - allow forward slashes for relative paths but block dangerous patterns
+        dangerous_patterns = ['..', '~', '$', '|', ';', '&', '\\']
+        if any(pattern in config_file for pattern in dangerous_patterns):
+            raise ConfigError(
+                f"Config file name '{config_file}' contains invalid characters"
+            )
+            
+        # Block absolute paths (starting with /)
+        if config_file.startswith('/'):
+            raise ConfigError(
+                f"Config file name '{config_file}' cannot be an absolute path"
+            )
+            
+        # Check file extension
+        allowed_extensions = ['.json', '.conf', '.cfg']
+        if not any(config_file.endswith(ext) for ext in allowed_extensions):
+            config_file += '.json'  # Default to JSON if no extension
+            
+        # Ensure filename length is reasonable
+        if len(config_file) > 100:
+            raise ConfigError(f"Config file name too long: {len(config_file)} characters")
+            
+        return self.data_dir / config_file
 
     def _load_colors(self) -> Dict[str, str]:
         """Load color configuration from file.
@@ -94,6 +183,9 @@ class ConfigManager(QObject):
             self.config_file.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            # Set secure file permissions (owner read/write only)
+            self.config_file.chmod(0o600)
             logger.debug(f"Config saved to {self.config_file}")
         except IOError as e:
             logger.error(f"Error saving config: {e}")

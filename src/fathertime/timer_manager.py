@@ -1,7 +1,14 @@
+"""Timer management for Father Time application.
+
+This module handles all timer operations including starting, stopping, and tracking
+timer states across different dates. It integrates with the Qt/QML UI system and
+provides optimized performance for handling multiple concurrent timers.
+"""
+
 import json
 import os
 from datetime import date, datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional, List, Set
 
 from PySide6.QtCore import (
     Property,
@@ -112,7 +119,7 @@ class TimerManager(QObject):
     timesheetChanged = Signal()
     dailyBreakdownChanged = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.db = Database()
         self._timers = []
@@ -121,20 +128,18 @@ class TimerManager(QObject):
         self._current_date = date.today()
         self._daily_breakdown = []
 
-        # Timer for updating running timers every second
-        self.update_timer = QTimer()
-        self.update_timer.timeout.connect(self._update_running_timers)
-        self.update_timer.start(1000)
-
-        # Timer to check for day rollover every minute
-        self.day_check_timer = QTimer()
-        self.day_check_timer.timeout.connect(self._check_day_rollover)
-        self.day_check_timer.start(60000)  # Check every minute
-
-        # Timer to update daily breakdown every 5 seconds for live updates
-        self.breakdown_timer = QTimer()
-        self.breakdown_timer.timeout.connect(self._update_daily_breakdown)
-        self.breakdown_timer.start(5000)  # Update every 5 seconds
+        # Consolidated timer system - single timer with state-based logic
+        self.main_timer = QTimer()
+        self.main_timer.timeout.connect(self._consolidated_timer_update)
+        self.main_timer.start(1000)  # 1 second interval
+        
+        # Timer state tracking for efficient updates
+        self._timer_update_counter = 0
+        self._last_day_check = 0  # Track when we last checked for day rollover
+        self._last_breakdown_update = 0  # Track when we last updated breakdown
+        
+        # Performance: track only running timers to avoid unnecessary work
+        self._running_timer_ids = set()  # Set of timer IDs that are currently running
 
         self._load_timers()
 
@@ -142,9 +147,29 @@ class TimerManager(QObject):
         self._update_breakdown_data()
         self.timesheetChanged.emit()
 
+    def _format_time_literal(self, total_seconds: int) -> str:
+        """Format time without approximations showing exact hours, minutes, seconds."""
+        if total_seconds == 0:
+            return "0s"
+            
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        if seconds > 0:
+            parts.append(f"{seconds}s")
+            
+        return " ".join(parts)
+
 
     def _load_timers(self):
         self._timers.clear()
+        self._running_timer_ids.clear()  # Reset running timer set
         current_date = self._get_current_date_string()
         
         # Get date-specific timers (with smart propagation)
@@ -160,6 +185,11 @@ class TimerManager(QObject):
             
             timer_item = TimerItem(merged_data)
             self._timers.append(timer_item)
+            
+            # Add to running timer set if timer is currently running
+            if merged_data.get("is_running", False):
+                self._running_timer_ids.add(data["id"])
+                
         self.timersChanged.emit()
         
     def _get_current_date_string(self):
@@ -192,8 +222,7 @@ class TimerManager(QObject):
         today = str(date.today())
         daily_summary = self.db.get_daily_summary(today)
         total_seconds = sum(daily_summary.values()) if daily_summary else 0
-        hours = total_seconds / 3600
-        return f"{hours:.1f}h"
+        return self._format_time_literal(total_seconds)
 
     @Property(str, notify=statsChanged)
     def yesterdayHours(self):
@@ -201,8 +230,7 @@ class TimerManager(QObject):
         yesterday = str(date.today() - timedelta(days=1))
         daily_summary = self.db.get_daily_summary(yesterday)
         total_seconds = sum(daily_summary.values()) if daily_summary else 0
-        hours = total_seconds / 3600
-        return f"{hours:.1f}h"
+        return self._format_time_literal(total_seconds)
 
     @Property(str, notify=statsChanged)
     def thisWeekHours(self):
@@ -210,8 +238,7 @@ class TimerManager(QObject):
         total_seconds = 0
         for day_data in weekly_data.values():
             total_seconds += sum(day_data.values())
-        hours = total_seconds / 3600
-        return f"{hours:.1f}h"
+        return self._format_time_literal(total_seconds)
 
     @Property("QVariant", notify=dailyBreakdownChanged)
     def dailyBreakdown(self):
@@ -225,14 +252,13 @@ class TimerManager(QObject):
             return "No work sessions today"
 
         lines = [f"Today ({date.today().strftime('%Y-%m-%d')}):"]
-        total_hours = 0
+        total_seconds = 0
 
         for project, seconds in daily_summary.items():
-            hours = seconds / 3600
-            total_hours += hours
-            lines.append(f"  • {project}: {hours:.1f}h")
+            total_seconds += seconds
+            lines.append(f"  • {project}: {self._format_time_literal(seconds)}")
 
-        lines.append(f"Total: {total_hours:.1f}h")
+        lines.append(f"Total: {self._format_time_literal(total_seconds)}")
         return "\n".join(lines)
 
     @Slot(result=str)
@@ -243,7 +269,7 @@ class TimerManager(QObject):
             return "No work sessions this week"
 
         lines = ["WEEKLY TIMESHEET", "=" * 40]
-        weekly_total = 0
+        weekly_total_seconds = 0
 
         # Sort dates in reverse order (most recent first)
         for date_str in sorted(weekly_data.keys(), reverse=True):
@@ -252,17 +278,16 @@ class TimerManager(QObject):
             day_name = date_obj.strftime("%A")
 
             lines.append(f"\n{day_name}, {date_obj.strftime('%B %d, %Y')}:")
-            daily_total = 0
+            daily_total_seconds = 0
 
             for project, seconds in projects.items():
-                hours = seconds / 3600
-                daily_total += hours
-                lines.append(f"  • {project}: {hours:.1f}h")
+                daily_total_seconds += seconds
+                lines.append(f"  • {project}: {self._format_time_literal(seconds)}")
 
-            lines.append(f"  Daily Total: {daily_total:.1f}h")
-            weekly_total += daily_total
+            lines.append(f"  Daily Total: {self._format_time_literal(daily_total_seconds)}")
+            weekly_total_seconds += daily_total_seconds
 
-        lines.append(f"\nWEEKLY TOTAL: {weekly_total:.1f}h")
+        lines.append(f"\nWEEKLY TOTAL: {self._format_time_literal(weekly_total_seconds)}")
         lines.append("=" * 40)
 
         return "\n".join(lines)
@@ -312,14 +337,14 @@ class TimerManager(QObject):
                         projects.append(
                             {
                                 "name": project,
-                                "hours": f"{hours:.1f}h",
+                                "hours": self._format_time_literal(seconds),
                                 "rawHours": hours,
                             }
                         )
                 else:
                     # Show "No work today" for empty days
                     projects.append(
-                        {"name": "No work sessions", "hours": "0.0h", "rawHours": 0}
+                        {"name": "No work sessions", "hours": "0s", "rawHours": 0}
                     )
 
                 breakdown_data.append(
@@ -328,7 +353,7 @@ class TimerManager(QObject):
                         "dayName": day_name,
                         "formattedDate": formatted_date,
                         "projects": projects,
-                        "totalHours": f"{total_hours:.1f}h",
+                        "totalHours": self._format_time_literal(total_seconds),
                         "rawTotalHours": total_hours,
                         "isToday": i == 0,
                     }
@@ -338,13 +363,45 @@ class TimerManager(QObject):
 
     @Slot(str, str)
     def addTimer(self, name: str, timer_type: str = "stopwatch"):
-        current_date = self._get_current_date_string()
-        timer_id = self.db.add_timer_to_date(current_date, name, timer_type)
-        # Reload timers to reflect the new timer and any propagation
-        self._load_timers()
+        """Add a new timer with validation.
+        
+        Args:
+            name: Name of the timer
+            timer_type: Type of timer ('stopwatch' or 'countdown')
+        """
+        # Validate inputs
+        if not isinstance(name, str):
+            logger.error("Timer name must be a string")
+            return
+            
+        if not isinstance(timer_type, str):
+            logger.error("Timer type must be a string")
+            return
+            
+        if timer_type not in ("stopwatch", "countdown"):
+            logger.error(f"Invalid timer type: {timer_type}")
+            return
+        
+        try:
+            current_date = self._get_current_date_string()
+            timer_id = self.db.add_timer_to_date(current_date, name, timer_type)
+            # Reload timers to reflect the new timer and any propagation
+            self._load_timers()
+        except Exception as e:
+            logger.error(f"Failed to add timer: {e}")
 
     @Slot(int)
     def startTimer(self, timer_id: int):
+        """Start a timer with the given ID.
+        
+        Args:
+            timer_id: ID of the timer to start
+        """
+        # Validate timer ID
+        if not isinstance(timer_id, int) or timer_id <= 0:
+            logger.error(f"Invalid timer ID: {timer_id}")
+            return
+            
         timer_item = self._get_timer_by_id(timer_id)
         if timer_item and not timer_item.isRunning:
             timer_item.isRunning = True
@@ -361,9 +418,22 @@ class TimerManager(QObject):
                 "is_running": True, 
                 "last_started": now
             })
+            
+            # Add to running timer set for optimized updates
+            self._running_timer_ids.add(timer_id)
 
     @Slot(int)
     def stopTimer(self, timer_id: int):
+        """Stop a timer with the given ID.
+        
+        Args:
+            timer_id: ID of the timer to stop
+        """
+        # Validate timer ID
+        if not isinstance(timer_id, int) or timer_id <= 0:
+            logger.error(f"Invalid timer ID: {timer_id}")
+            return
+            
         timer_item = self._get_timer_by_id(timer_id)
         if timer_item and timer_item.isRunning:
             timer_item.isRunning = False
@@ -383,6 +453,9 @@ class TimerManager(QObject):
                 "elapsed_seconds": timer_item.elapsedSeconds,
                 "countdown_seconds": timer_item.countdownSeconds,
             })
+            
+            # Remove from running timer set
+            self._running_timer_ids.discard(timer_id)
 
     @Slot(int)
     def resetTimer(self, timer_id: int):
@@ -402,6 +475,9 @@ class TimerManager(QObject):
                 "elapsed_seconds": timer_item.elapsedSeconds,
                 "countdown_seconds": timer_item.countdownSeconds,
             })
+            
+            # Remove from running timer set since timer is reset
+            self._running_timer_ids.discard(timer_id)
 
     @Slot(int, int)
     def adjustTime(self, timer_id: int, seconds: int):
@@ -462,7 +538,7 @@ class TimerManager(QObject):
         self.timesheetChanged.emit()
         self.statsChanged.emit()
 
-    def _get_timer_by_id(self, timer_id: int):
+    def _get_timer_by_id(self, timer_id: int) -> Optional['TimerItem']:
         for timer in self._timers:
             if timer.id == timer_id:
                 return timer
@@ -518,12 +594,48 @@ class TimerManager(QObject):
                     if timer.elapsedSeconds != updated_state.get("elapsed_seconds", 0):
                         timer.elapsedSeconds = updated_state["elapsed_seconds"]
                         current_changed = True
+        
+        # Emit signal if any timers changed
+        if current_changed:
+            self.timersChanged.emit()
 
     def _update_daily_breakdown(self):
         """Update daily breakdown if there are active timers"""
         if self._active_sessions:  # Only update if there are running timers
             self._update_breakdown_data()
             self.timesheetChanged.emit()
+
+    def _consolidated_timer_update(self):
+        """Consolidated timer update method that efficiently handles all timing tasks.
+        
+        This replaces the previous three separate timers with a single efficient system.
+        Updates are performed based on counters to maintain the same effective intervals:
+        - Running timers: Every 1 second (always)
+        - Day rollover check: Every 60 seconds 
+        - Breakdown update: Every 5 seconds (when there are active sessions)
+        """
+        self._timer_update_counter += 1
+        
+        # Always update running timers (every 1 second)
+        if self._running_timer_ids:  # Only if there are running timers
+            self._update_running_timers()
+        
+        # Check day rollover every 60 seconds (60 * 1 second intervals)
+        if self._timer_update_counter % 60 == 0:
+            self._check_day_rollover()
+            self._last_day_check = self._timer_update_counter
+            
+        # Update breakdown every 5 seconds (5 * 1 second intervals) when active
+        if self._timer_update_counter % 5 == 0 and self._active_sessions:
+            self._update_daily_breakdown()
+            self._last_breakdown_update = self._timer_update_counter
+            
+        # Reset counter every 300 seconds (5 minutes) to prevent overflow
+        if self._timer_update_counter >= 300:
+            self._timer_update_counter = 0
+
+    # REMOVED: _update_running_timers_optimized() method was causing timer conflicts
+    # Using the simpler _update_running_timers() method instead
 
     def _check_day_rollover(self):
         """Check if we've rolled over to a new day and refresh timesheet if so"""

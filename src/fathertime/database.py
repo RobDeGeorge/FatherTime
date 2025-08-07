@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -13,6 +14,13 @@ from .config import (
 )
 from .exceptions import DatabaseError, ValidationError
 from .logger import logger
+
+# Import QTimer for batch saving (only if PySide6 is available)
+try:
+    from PySide6.QtCore import QTimer
+    HAS_QTIMER = True
+except ImportError:
+    HAS_QTIMER = False
 
 
 class Database:
@@ -44,6 +52,187 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise DatabaseError(f"Database initialization failed: {e}") from e
+            
+        # Initialize batch saving system to reduce I/O operations
+        self._pending_saves = {
+            'data': False,
+            'sessions': False, 
+            'daily_states': False,
+            'daily_timers': False
+        }
+        
+        # Set up batch save timer if Qt is available
+        if HAS_QTIMER:
+            self._batch_save_timer = QTimer()
+            self._batch_save_timer.timeout.connect(self._batch_save_all)
+            self._batch_save_timer.start(10000)  # Save every 10 seconds
+            logger.debug("Batch saving system initialized with 10-second intervals")
+        else:
+            self._batch_save_timer = None
+            logger.warning("QTimer not available - batch saving disabled")
+
+    def _sanitize_timer_name(self, name: str) -> str:
+        """Sanitize timer name for security and consistency.
+        
+        Args:
+            name: Raw timer name from user input
+            
+        Returns:
+            Sanitized timer name
+            
+        Raises:
+            ValidationError: If name is invalid after sanitization
+        """
+        if not name or not isinstance(name, str):
+            raise ValidationError("Timer name must be a non-empty string")
+            
+        # Remove leading/trailing whitespace
+        name = name.strip()
+        
+        if not name:
+            raise ValidationError("Timer name cannot be empty or only whitespace")
+            
+        # Length validation
+        if len(name) > 100:
+            raise ValidationError(f"Timer name too long: {len(name)} characters (max 100)")
+            
+        if len(name) < 1:
+            raise ValidationError("Timer name too short")
+            
+        # Remove or replace dangerous characters
+        # Allow alphanumeric, spaces, hyphens, underscores, parentheses, and basic punctuation
+        allowed_pattern = re.compile(r'^[a-zA-Z0-9\s\-_().,!?:]+$')
+        if not allowed_pattern.match(name):
+            raise ValidationError(
+                "Timer name contains invalid characters. "
+                "Only letters, numbers, spaces, and basic punctuation are allowed."
+            )
+            
+        # Remove multiple consecutive spaces
+        name = re.sub(r'\s+', ' ', name)
+        
+        # Security: Remove any potential script injection patterns
+        dangerous_patterns = [
+            r'<script',
+            r'javascript:',
+            r'on\w+\s*=',
+            r'<\s*iframe',
+            r'<\s*object',
+            r'<\s*embed'
+        ]
+        
+        for pattern in dangerous_patterns:
+            if re.search(pattern, name, re.IGNORECASE):
+                raise ValidationError(
+                    "Timer name contains potentially dangerous content"
+                )
+                
+        return name
+        
+    def _sanitize_project_name(self, name: str) -> str:
+        """Sanitize project name for security and consistency.
+        
+        Args:
+            name: Raw project name from user input
+            
+        Returns:
+            Sanitized project name
+            
+        Raises:
+            ValidationError: If name is invalid after sanitization
+        """
+        if not name or not isinstance(name, str):
+            raise ValidationError("Project name must be a non-empty string")
+            
+        # Remove leading/trailing whitespace
+        name = name.strip()
+        
+        if not name:
+            raise ValidationError("Project name cannot be empty or only whitespace")
+            
+        # Length validation
+        if len(name) > 100:
+            raise ValidationError(f"Project name too long: {len(name)} characters (max 100)")
+            
+        # Use same sanitization as timer names
+        allowed_pattern = re.compile(r'^[a-zA-Z0-9\s\-_().,!?:]+$')
+        if not allowed_pattern.match(name):
+            raise ValidationError(
+                "Project name contains invalid characters. "
+                "Only letters, numbers, spaces, and basic punctuation are allowed."
+            )
+            
+        # Remove multiple consecutive spaces
+        name = re.sub(r'\s+', ' ', name)
+        
+        # Security: Remove any potential script injection patterns
+        dangerous_patterns = [
+            r'<script',
+            r'javascript:',
+            r'on\w+\s*=',
+            r'<\s*iframe',
+            r'<\s*object',
+            r'<\s*embed'
+        ]
+        
+        for pattern in dangerous_patterns:
+            if re.search(pattern, name, re.IGNORECASE):
+                raise ValidationError(
+                    "Project name contains potentially dangerous content"
+                )
+                
+        return name
+
+    def _batch_save_all(self) -> None:
+        """Save all pending changes to disk in a single batch operation."""
+        if not any(self._pending_saves.values()):
+            return  # No pending saves
+            
+        saved_files = []
+        
+        try:
+            if self._pending_saves['data']:
+                self._save_data_to_file(self.data, self.db_file)
+                self._pending_saves['data'] = False
+                saved_files.append('timers')
+                
+            if self._pending_saves['sessions']:
+                self._save_data_to_file(self.sessions, self.sessions_file)
+                self._pending_saves['sessions'] = False
+                saved_files.append('sessions')
+                
+            if self._pending_saves['daily_states']:
+                self._save_data_to_file(self.daily_states, self.daily_states_file)
+                self._pending_saves['daily_states'] = False
+                saved_files.append('daily_states')
+                
+            if self._pending_saves['daily_timers']:
+                self._save_data_to_file(self.daily_timers, self.daily_timers_file)
+                self._pending_saves['daily_timers'] = False
+                saved_files.append('daily_timers')
+                
+            if saved_files:
+                logger.debug(f"Batch saved: {', '.join(saved_files)}")
+                
+        except Exception as e:
+            logger.error(f"Batch save failed: {e}")
+            
+    def _mark_for_save(self, data_type: str) -> None:
+        """Mark a data type for batch saving.
+        
+        Args:
+            data_type: Type of data to save ('data', 'sessions', 'daily_states', 'daily_timers')
+        """
+        if data_type in self._pending_saves:
+            self._pending_saves[data_type] = True
+        else:
+            logger.warning(f"Unknown data type for batch save: {data_type}")
+            
+    def flush_all_saves(self) -> None:
+        """Immediately save all pending changes (used for shutdown or critical operations)."""
+        if any(self._pending_saves.values()):
+            logger.info("Flushing all pending saves...")
+            self._batch_save_all()
 
     def _load_data(self) -> Dict[str, Any]:
         """Load timer data from JSON file.
@@ -135,32 +324,50 @@ class Database:
             logger.error(f"Cannot read daily states file: {e}")
             raise DatabaseError(f"Cannot read daily states file: {e}") from e
 
-    def save_data(self) -> None:
+    def save_data(self, immediate: bool = False) -> None:
         """Save timer data to JSON file.
 
+        Args:
+            immediate: If True, save immediately; otherwise mark for batch save
+            
         Raises:
             DatabaseError: If file cannot be saved
         """
-        self._save_data_to_file(self.data, self.db_file)
-        logger.debug(f"Saved timer data to {self.db_file}")
+        if immediate or not self._batch_save_timer:
+            self._save_data_to_file(self.data, self.db_file)
+            logger.debug(f"Saved timer data to {self.db_file}")
+        else:
+            self._mark_for_save('data')
 
-    def save_sessions(self) -> None:
+    def save_sessions(self, immediate: bool = False) -> None:
         """Save session data to JSON file.
 
+        Args:
+            immediate: If True, save immediately; otherwise mark for batch save
+            
         Raises:
             DatabaseError: If file cannot be saved
         """
-        self._save_data_to_file(self.sessions, self.sessions_file)
-        logger.debug(f"Saved sessions data to {self.sessions_file}")
+        if immediate or not self._batch_save_timer:
+            self._save_data_to_file(self.sessions, self.sessions_file)
+            logger.debug(f"Saved sessions data to {self.sessions_file}")
+        else:
+            self._mark_for_save('sessions')
 
-    def save_daily_states(self) -> None:
+    def save_daily_states(self, immediate: bool = False) -> None:
         """Save daily timer states to JSON file.
 
+        Args:
+            immediate: If True, save immediately; otherwise mark for batch save
+            
         Raises:
             DatabaseError: If file cannot be saved
         """
-        self._save_data_to_file(self.daily_states, self.daily_states_file)
-        logger.debug(f"Saved daily states data to {self.daily_states_file}")
+        if immediate or not self._batch_save_timer:
+            self._save_data_to_file(self.daily_states, self.daily_states_file)
+            logger.debug(f"Saved daily states data to {self.daily_states_file}")
+        else:
+            self._mark_for_save('daily_states')
 
     def _check_and_archive_old_data(self):
         """Archive data older than 2 weeks"""
@@ -225,6 +432,10 @@ class Database:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            # Set secure file permissions (owner read/write only)
+            file_path.chmod(0o600)
+            logger.debug(f"Data saved to {file_path} with secure permissions")
         except IOError as e:
             logger.error(f"Cannot save to {file_path}: {e}")
             raise DatabaseError(f"Cannot save to {file_path}: {e}") from e
@@ -317,14 +528,20 @@ class Database:
         if "daily_timers" not in data or not isinstance(data["daily_timers"], dict):
             raise ValidationError("Daily timers data must contain 'daily_timers' dictionary")
 
-    def save_daily_timers(self) -> None:
+    def save_daily_timers(self, immediate: bool = False) -> None:
         """Save daily timers to JSON file.
 
+        Args:
+            immediate: If True, save immediately; otherwise mark for batch save
+            
         Raises:
             DatabaseError: If file cannot be saved
         """
-        self._save_data_to_file(self.daily_timers, self.daily_timers_file)
-        logger.debug(f"Saved daily timers data to {self.daily_timers_file}")
+        if immediate or not self._batch_save_timer:
+            self._save_data_to_file(self.daily_timers, self.daily_timers_file)
+            logger.debug(f"Saved daily timers data to {self.daily_timers_file}")
+        else:
+            self._mark_for_save('daily_timers')
 
     def get_all_timers(self) -> List[Dict]:
         return self.data.get("timers", [])
@@ -343,18 +560,13 @@ class Database:
             ValidationError: If input is invalid
             DatabaseError: If timer cannot be saved
         """
-        # Validate inputs
-        if not name or not name.strip():
-            raise ValidationError("Timer name cannot be empty")
+        # Sanitize and validate inputs
+        name = self._sanitize_timer_name(name)
         if timer_type not in ("stopwatch", "countdown"):
             raise ValidationError("Timer type must be 'stopwatch' or 'countdown'")
 
-        name = name.strip()
-
-        # Check for duplicate names
-        for timer in self.data["timers"]:
-            if timer["name"] == name:
-                raise ValidationError(f"Timer with name '{name}' already exists")
+        # Note: Global uniqueness check removed - timers are now date-specific
+        # The same timer name can exist on different dates with independent values
         timer_id = self.data["next_id"]
         timer = {
             "id": timer_id,
@@ -479,50 +691,32 @@ class Database:
         self.save_daily_states()
 
     def get_timers_for_date(self, date_str: str) -> List[Dict]:
-        """Get all timers for a specific date with smart propagation logic.
+        """Get all timers for a specific date (independent per date).
         
         Args:
             date_str: Date string in YYYY-MM-DD format
             
         Returns:
-            List of timer dictionaries for that date
+            List of timer dictionaries for that date only
         """
         if "daily_timers" not in self.daily_timers:
             self.daily_timers["daily_timers"] = {}
             
-        # If date already has timers, return them
+        # Return only the timers that were specifically created for this date
         if date_str in self.daily_timers["daily_timers"]:
             return self.daily_timers["daily_timers"][date_str]
-            
-        # Find the most recent date with timers that's <= current date
-        recent_date = self._find_most_recent_timer_date(date_str)
         
-        if recent_date:
-            # Copy timers from most recent date
-            base_timers = self.daily_timers["daily_timers"][recent_date].copy()
-            # Create new timer set for this date
-            self.daily_timers["daily_timers"][date_str] = base_timers
-            self.save_daily_timers()
-            return base_timers
-        
-        # No previous timers found, return empty list
+        # If no timers exist for this date, return empty list
+        # Each date starts with no timers - no propagation from other dates
         return []
         
     def _find_most_recent_timer_date(self, target_date: str) -> Optional[str]:
-        """Find the most recent date with timers that's <= target_date."""
-        available_dates = list(self.daily_timers["daily_timers"].keys())
-        if not available_dates:
-            return None
-            
-        # Filter dates <= target_date and sort descending
-        valid_dates = [d for d in available_dates if d <= target_date]
-        if not valid_dates:
-            return None
-            
-        return max(valid_dates)
+        """DEPRECATED: No longer used since timers are date-independent."""
+        # No longer needed - each date maintains independent timers
+        return None
         
     def add_timer_to_date(self, date_str: str, name: str, timer_type: str = "stopwatch") -> int:
-        """Add a timer to a specific date.
+        """Add a timer to a specific date with unique ID for that date.
         
         Args:
             date_str: Date string in YYYY-MM-DD format
@@ -530,11 +724,32 @@ class Database:
             timer_type: Type of timer
             
         Returns:
-            Timer ID
+            Timer ID (unique per date)
         """
-        # Create timer in global timers table (for sessions compatibility)
-        timer_id = self.add_timer(name, timer_type)
-        timer_data = self.get_timer(timer_id)
+        # Sanitize and validate inputs
+        name = self._sanitize_timer_name(name)
+        if timer_type not in ("stopwatch", "countdown"):
+            raise ValidationError("Timer type must be 'stopwatch' or 'countdown'")
+        
+        # Create unique timer ID for this date
+        timer_id = self._get_next_timer_id()
+        
+        # Create timer data specific to this date
+        timer_data = {
+            "id": timer_id,
+            "name": name,
+            "type": timer_type,
+            "elapsed_seconds": 0,
+            "countdown_seconds": 0,
+            "is_running": False,
+            "created_at": datetime.now().isoformat(),
+            "last_started": None,
+            "date_created": date_str  # Track which date this timer was created on
+        }
+        
+        # Add to global timers table (for sessions compatibility)
+        self.data["timers"].append(timer_data)
+        self.save_data()
         
         # Add to date-specific timers
         if "daily_timers" not in self.daily_timers:
@@ -542,31 +757,36 @@ class Database:
             
         if date_str not in self.daily_timers["daily_timers"]:
             self.daily_timers["daily_timers"][date_str] = []
+        
+        # Check for duplicate names on this specific date only
+        existing_names = [t["name"] for t in self.daily_timers["daily_timers"][date_str]]
+        if name in existing_names:
+            # Rollback the global timer that was added
+            self.data["timers"] = [t for t in self.data["timers"] if t["id"] != timer_id]
+            self.data["next_id"] -= 1  # Rollback ID counter
+            raise ValidationError(f"Timer with name '{name}' already exists on {date_str}")
             
-        self.daily_timers["daily_timers"][date_str].append(timer_data)
+        self.daily_timers["daily_timers"][date_str].append(timer_data.copy())
         self.save_daily_timers()
         
-        # Propagate to future dates that don't have this timer yet
-        self._propagate_timer_forward(date_str, timer_data)
+        # DO NOT propagate - each date should be independent
         
+        return timer_id
+    
+    def _get_next_timer_id(self) -> int:
+        """Get the next unique timer ID."""
+        timer_id = self.data["next_id"]
+        self.data["next_id"] += 1
         return timer_id
         
     def _propagate_timer_forward(self, from_date: str, timer_data: Dict):
-        """Propagate a timer to all future dates that need it."""
-        from datetime import datetime, timedelta
+        """DEPRECATED: Timer propagation disabled for date-independent timers.
         
-        start_date = datetime.fromisoformat(from_date)
-        
-        # Find all existing dates after from_date
-        existing_dates = [d for d in self.daily_timers["daily_timers"].keys() if d > from_date]
-        
-        for date_str in existing_dates:
-            date_timers = self.daily_timers["daily_timers"][date_str]
-            # Check if this timer name already exists
-            if not any(t["name"] == timer_data["name"] for t in date_timers):
-                date_timers.append(timer_data.copy())
-                
-        self.save_daily_timers()
+        Each date now maintains completely independent timer instances.
+        Timers with the same name can exist on different dates with different values.
+        """
+        # No longer propagating timers - each date is independent
+        pass
         
     def remove_timer_from_date(self, date_str: str, timer_id: int):
         """Remove a timer from a specific date."""
@@ -596,10 +816,9 @@ class Database:
         # Validate inputs
         if not isinstance(timer_id, int) or timer_id <= 0:
             raise ValidationError("Timer ID must be a positive integer")
-        if not project_name or not project_name.strip():
-            raise ValidationError("Project name cannot be empty")
-
-        project_name = project_name.strip()
+        
+        # Sanitize project name
+        project_name = self._sanitize_project_name(project_name)
         
         # Generate unique session ID
         existing_ids = [s.get("id", 0) for s in self.sessions.get("sessions", [])]

@@ -19,7 +19,17 @@
       "is_running": false,
       "created_at": "2025-08-06T11:16:07.886985",
       "last_started": null
+    },
+    {
+      "id": 3,
+      "name": "test",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "is_running": false,
+      "created_at": "2025-08-06T15:13:46.510809",
+      "last_started": null
     }
   ],
-  "next_id": 3
+  "next_id": 4
 }

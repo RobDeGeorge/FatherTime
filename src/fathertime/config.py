@@ -39,7 +39,7 @@ def get_qt_environment() -> Dict[str, str]:
         # macOS settings
         return {
             "QT_QPA_PLATFORM": "cocoa",
-            "QT_QUICK_BACKEND": "software", 
+            "QT_QUICK_BACKEND": "software",
             "QSG_RHI_BACKEND": "software",
         }
     else:

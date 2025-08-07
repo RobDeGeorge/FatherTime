@@ -1,8 +1,18 @@
-PySide6>=6.5.0
-pytest>=7.0.0
-pytest-qt>=4.0.0
-mypy>=1.0.0
-black>=22.0.0
-flake8>=4.0.0
-isort>=5.0.0
-pyinstaller>=5.0.0
+# GUI Framework
+PySide6>=6.8.0
+
+# Testing Framework
+pytest>=8.3.0
+pytest-qt>=4.4.0
+
+# Code Quality Tools
+mypy>=1.13.0
+black>=24.10.0
+flake8>=7.1.0
+isort>=5.13.0
+
+# Build Tools
+pyinstaller>=6.11.0
+
+# Security - Pin specific versions for security
+setuptools>=75.0.0

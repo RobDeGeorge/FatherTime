@@ -109,6 +109,76 @@
       "end_time": "2025-08-06T12:49:43.321386",
       "duration_seconds": 2,
       "is_active": false
+    },
+    {
+      "id": 12,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-06",
+      "start_time": "2025-08-06T15:13:47.696276",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 13,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:27:39.684330",
+      "end_time": "2025-08-07T07:28:09.286935",
+      "duration_seconds": 29,
+      "is_active": false
+    },
+    {
+      "id": 14,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:28:17.830527",
+      "end_time": "2025-08-07T07:28:21.748870",
+      "duration_seconds": 3,
+      "is_active": false
+    },
+    {
+      "id": 15,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:43:25.711850",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 16,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:44:19.107560",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    },
+    {
+      "id": 17,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:49:14.656681",
+      "end_time": "2025-08-07T07:49:18.715810",
+      "duration_seconds": 4,
+      "is_active": false
+    },
+    {
+      "id": 18,
+      "timer_id": 3,
+      "project_name": "test",
+      "date": "2025-08-07",
+      "start_time": "2025-08-07T07:57:17.748719",
+      "end_time": "2025-08-07T07:57:24.155066",
+      "duration_seconds": 6,
+      "is_active": false
     }
   ]
 }
