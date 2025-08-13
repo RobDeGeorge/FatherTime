@@ -102,6 +102,7 @@ class TimerItem(QObject):
         if self._is_running != value:
             self._is_running = value
             self.isRunningChanged.emit()
+            self.displayTimeChanged.emit()  # Format changes based on running state
 
     @Property(bool, notify=isFavoriteChanged)
     def isFavorite(self):
@@ -123,7 +124,21 @@ class TimerItem(QObject):
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
         secs = seconds % 60
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+        
+        # For stopped timers, show timesheet-friendly format (decimal hours)
+        # For running timers, show standard HH:MM:SS format
+        if not self._is_running and self._type != "countdown":
+            # Convert to decimal hours for timesheet entry
+            decimal_hours = seconds / 3600.0
+            if decimal_hours == 0:
+                return "0.00h"
+            elif decimal_hours < 0.01:  # Less than 0.01 hours (36 seconds)
+                return f"{decimal_hours:.3f}h"
+            else:
+                return f"{decimal_hours:.2f}h"
+        else:
+            # Standard format for running timers and countdown timers
+            return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
 class TimerManager(QObject):
