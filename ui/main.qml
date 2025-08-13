@@ -313,7 +313,7 @@ ApplicationWindow {
                                         font.pixelSize: 12
                                         Layout.preferredWidth: 90
                                         Layout.preferredHeight: 35
-                                        visible: false
+                                        visible: true
                                         background: Rectangle {
                                             color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
                                             radius: 6
@@ -359,6 +359,7 @@ ApplicationWindow {
                                     onResetTimer: timerManager.resetTimer(timerItem.id)
                                     onAdjustTime: timerManager.adjustTime(timerItem.id, seconds)
                                     onSetCountdown: timerManager.setCountdownTime(timerItem.id, seconds)
+                                    onToggleFavorite: timerManager.toggleTimerFavorite(timerItem.id)
                                 }
                             }
                         }
@@ -794,8 +795,58 @@ ApplicationWindow {
                             id: hoursSpinBox
                             from: 0
                             to: 23
-                            Layout.preferredWidth: 80
+                            Layout.preferredWidth: 120
+                            Layout.preferredHeight: 40
+                            font.pixelSize: 14
                             textFromValue: function(value, locale) { return value + "h" }
+                            
+                            background: Rectangle {
+                                color: "white"
+                                border.color: primaryColor
+                                border.width: 2
+                                radius: 6
+                            }
+                            
+                            contentItem: Text {
+                                text: hoursSpinBox.textFromValue(hoursSpinBox.value, hoursSpinBox.locale)
+                                font: hoursSpinBox.font
+                                color: primaryColor
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            up.indicator: Rectangle {
+                                x: hoursSpinBox.mirrored ? 0 : parent.width - width
+                                height: parent.height / 2
+                                width: 30
+                                color: hoursSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "+"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
+                            
+                            down.indicator: Rectangle {
+                                x: hoursSpinBox.mirrored ? 0 : parent.width - width
+                                y: parent.height / 2
+                                height: parent.height / 2
+                                width: 30
+                                color: hoursSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "-"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
                         }
                     }
                     
@@ -811,8 +862,58 @@ ApplicationWindow {
                             id: minutesSpinBox
                             from: 0
                             to: 59
-                            Layout.preferredWidth: 80
+                            Layout.preferredWidth: 120
+                            Layout.preferredHeight: 40
+                            font.pixelSize: 14
                             textFromValue: function(value, locale) { return value + "m" }
+                            
+                            background: Rectangle {
+                                color: "white"
+                                border.color: primaryColor
+                                border.width: 2
+                                radius: 6
+                            }
+                            
+                            contentItem: Text {
+                                text: minutesSpinBox.textFromValue(minutesSpinBox.value, minutesSpinBox.locale)
+                                font: minutesSpinBox.font
+                                color: primaryColor
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            up.indicator: Rectangle {
+                                x: minutesSpinBox.mirrored ? 0 : parent.width - width
+                                height: parent.height / 2
+                                width: 30
+                                color: minutesSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "+"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
+                            
+                            down.indicator: Rectangle {
+                                x: minutesSpinBox.mirrored ? 0 : parent.width - width
+                                y: parent.height / 2
+                                height: parent.height / 2
+                                width: 30
+                                color: minutesSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "-"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
                         }
                     }
                     
@@ -828,8 +929,58 @@ ApplicationWindow {
                             id: secondsSpinBox
                             from: 0
                             to: 59
-                            Layout.preferredWidth: 80
+                            Layout.preferredWidth: 120
+                            Layout.preferredHeight: 40
+                            font.pixelSize: 14
                             textFromValue: function(value, locale) { return value + "s" }
+                            
+                            background: Rectangle {
+                                color: "white"
+                                border.color: primaryColor
+                                border.width: 2
+                                radius: 6
+                            }
+                            
+                            contentItem: Text {
+                                text: secondsSpinBox.textFromValue(secondsSpinBox.value, secondsSpinBox.locale)
+                                font: secondsSpinBox.font
+                                color: primaryColor
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            up.indicator: Rectangle {
+                                x: secondsSpinBox.mirrored ? 0 : parent.width - width
+                                height: parent.height / 2
+                                width: 30
+                                color: secondsSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "+"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
+                            
+                            down.indicator: Rectangle {
+                                x: secondsSpinBox.mirrored ? 0 : parent.width - width
+                                y: parent.height / 2
+                                height: parent.height / 2
+                                width: 30
+                                color: secondsSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
+                                border.color: primaryColor
+                                border.width: 1
+                                
+                                Text {
+                                    text: "-"
+                                    font.pixelSize: 12
+                                    color: primaryColor
+                                    anchors.centerIn: parent
+                                }
+                            }
                         }
                     }
                 }
@@ -909,37 +1060,45 @@ ApplicationWindow {
         id: resetDataDialog
         title: "⚠️ Reset All Data"
         anchors.centerIn: parent
-        width: 500
-        height: 350
+        width: 650
+        height: 520
         modal: true
+        
+        property alias confirmationSlider: confirmSlider
+        
+        // Reset slider when dialog opens
+        onOpened: {
+            confirmSlider.value = 0
+        }
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 25
-            spacing: 20
+            anchors.margins: 30
+            spacing: 18
             
             Text {
-                text: "Are you sure you want to reset all data?"
+                text: "⚠️ DANGER: Complete Data Reset"
                 font.pixelSize: 18
                 font.bold: true
                 color: dangerColor
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
+                Layout.topMargin: 5
             }
             
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 150
-                color: Qt.rgba(dangerColor.r, dangerColor.g, dangerColor.b, 0.1)
-                radius: 8
-                border.color: dangerColor
+                Layout.preferredHeight: 160
+                color: Qt.rgba(dangerColor.r, dangerColor.g, dangerColor.b, 0.08)
+                radius: 10
+                border.color: Qt.rgba(dangerColor.r, dangerColor.g, dangerColor.b, 0.3)
                 border.width: 1
                 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 15
-                    spacing: 10
+                    anchors.margins: 18
+                    spacing: 12
                     
                     Text {
                         text: "This will permanently delete:"
@@ -951,27 +1110,31 @@ ApplicationWindow {
                     
                     Column {
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: 6
                         
                         Text {
                             text: "• All timer definitions and configurations"
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             color: textColor
+                            wrapMode: Text.WordWrap
                         }
                         Text {
                             text: "• All work sessions and time tracking history"
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             color: textColor
+                            wrapMode: Text.WordWrap
                         }
                         Text {
                             text: "• All daily statistics and breakdowns"
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             color: textColor
+                            wrapMode: Text.WordWrap
                         }
                         Text {
                             text: "• All date-specific timer states"
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             color: textColor
+                            wrapMode: Text.WordWrap
                         }
                     }
                     
@@ -982,18 +1145,107 @@ ApplicationWindow {
                         color: dangerColor
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
-                        Layout.topMargin: 10
+                        Layout.topMargin: 8
+                        wrapMode: Text.WordWrap
+                        Layout.maximumWidth: parent.width - 40
+                    }
+                }
+            }
+            
+            // Confirmation slider section
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 110
+                color: Qt.rgba(warningColor.r, warningColor.g, warningColor.b, 0.08)
+                radius: 10
+                border.color: Qt.rgba(warningColor.r, warningColor.g, warningColor.b, 0.3)
+                border.width: 1
+                
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 16
+                    
+                    Text {
+                        text: "Slide all the way to the right to confirm deletion:"
+                        font.pixelSize: 13
+                        font.bold: true
+                        color: textColor
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                    }
+                    
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        
+                        Text {
+                            text: "SAFE"
+                            font.pixelSize: 11
+                            font.bold: true
+                            color: successColor
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        
+                        Slider {
+                            id: confirmSlider
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 30
+                            from: 0
+                            to: 100
+                            value: 0
+                            
+                            background: Rectangle {
+                                x: confirmSlider.leftPadding
+                                y: confirmSlider.topPadding + confirmSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 200
+                                implicitHeight: 8
+                                width: confirmSlider.availableWidth
+                                height: implicitHeight
+                                radius: 4
+                                color: "#e8e8e8"
+                                
+                                Rectangle {
+                                    width: confirmSlider.visualPosition * parent.width
+                                    height: parent.height
+                                    color: confirmSlider.value < 95 ? warningColor : dangerColor
+                                    radius: 4
+                                }
+                            }
+                            
+                            handle: Rectangle {
+                                x: confirmSlider.leftPadding + confirmSlider.visualPosition * (confirmSlider.availableWidth - width)
+                                y: confirmSlider.topPadding + confirmSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 28
+                                implicitHeight: 28
+                                radius: 14
+                                color: confirmSlider.pressed ? Qt.darker(confirmSlider.value < 95 ? warningColor : dangerColor, 1.2) : (confirmSlider.value < 95 ? warningColor : dangerColor)
+                                border.color: "#ffffff"
+                                border.width: 2
+                            }
+                        }
+                        
+                        Text {
+                            text: "DELETE"
+                            font.pixelSize: 11
+                            font.bold: true
+                            color: dangerColor
+                            Layout.alignment: Qt.AlignVCenter
+                        }
                     }
                 }
             }
             
             Item {
                 Layout.fillHeight: true
+                Layout.minimumHeight: 20
             }
             
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 15
+                spacing: 20
+                Layout.bottomMargin: 5
                 
                 Item {
                     Layout.fillWidth: true
@@ -1001,29 +1253,39 @@ ApplicationWindow {
                 
                 Button {
                     text: "Cancel"
-                    Layout.preferredWidth: 85
-                    Layout.preferredHeight: 35
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 40
                     background: Rectangle {
-                        color: parent.pressed ? Qt.darker("#bdc3c7") : "#bdc3c7"
-                        radius: 5
+                        color: parent.pressed ? Qt.darker("#95a5a6", 1.2) : "#95a5a6"
+                        radius: 6
                     }
                     contentItem: Text {
                         text: parent.text
                         color: "white"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 11
+                        font.pixelSize: 12
+                        font.bold: true
+                        wrapMode: Text.WordWrap
                     }
-                    onClicked: resetDataDialog.close()
+                    onClicked: {
+                        confirmSlider.value = 0  // Reset slider
+                        resetDataDialog.close()
+                    }
                 }
                 
                 Button {
-                    text: "Reset All"
-                    Layout.preferredWidth: 85
-                    Layout.preferredHeight: 35
+                    text: confirmSlider.value >= 95 ? "CONFIRM RESET" : "Slide slider →"
+                    enabled: confirmSlider.value >= 95
+                    Layout.preferredWidth: 160
+                    Layout.preferredHeight: 40
                     background: Rectangle {
-                        color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
-                        radius: 5
+                        color: {
+                            if (!parent.enabled) return "#bdc3c7"
+                            if (parent.pressed) return Qt.darker(dangerColor, 1.2)
+                            return confirmSlider.value >= 95 ? dangerColor : "#bdc3c7"
+                        }
+                        radius: 6
                     }
                     contentItem: Text {
                         text: parent.text
@@ -1031,10 +1293,13 @@ ApplicationWindow {
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: 11
-                        font.bold: true
+                        font.bold: parent.enabled
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideNone
                     }
                     onClicked: {
                         timerManager.resetAllData()
+                        confirmSlider.value = 0  // Reset slider
                         resetDataDialog.close()
                     }
                 }

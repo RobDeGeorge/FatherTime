@@ -19,6 +19,7 @@ from PySide6.QtCore import (
 )
 
 from .database import Database
+from .logger import logger
 
 
 class TimerItem(QObject):
@@ -28,6 +29,7 @@ class TimerItem(QObject):
     elapsedSecondsChanged = Signal()
     countdownSecondsChanged = Signal()
     isRunningChanged = Signal()
+    isFavoriteChanged = Signal()
     displayTimeChanged = Signal()
 
     def __init__(self, timer_data: Dict = None):
@@ -42,6 +44,7 @@ class TimerItem(QObject):
             timer_data.get("countdown_seconds", 0) if timer_data else 0
         )
         self._is_running = timer_data.get("is_running", False) if timer_data else False
+        self._is_favorite = timer_data.get("is_favorite", False) if timer_data else False
         self._last_started = timer_data.get("last_started") if timer_data else None
 
     @Property(int, notify=idChanged)
@@ -99,6 +102,16 @@ class TimerItem(QObject):
         if self._is_running != value:
             self._is_running = value
             self.isRunningChanged.emit()
+
+    @Property(bool, notify=isFavoriteChanged)
+    def isFavorite(self):
+        return self._is_favorite
+
+    @isFavorite.setter
+    def isFavorite(self, value):
+        if self._is_favorite != value:
+            self._is_favorite = value
+            self.isFavoriteChanged.emit()
 
     @Property(str, notify=displayTimeChanged)
     def displayTime(self):
@@ -509,6 +522,35 @@ class TimerManager(QObject):
             self.db.update_daily_timer_state(timer_id, current_date, {
                 "countdown_seconds": seconds
             })
+
+    @Slot(int)
+    def toggleTimerFavorite(self, timer_id: int):
+        """Toggle the favorite status of a timer.
+        
+        Args:
+            timer_id: ID of the timer to toggle
+        """
+        # Validate timer ID
+        if not isinstance(timer_id, int) or timer_id <= 0:
+            logger.error(f"Invalid timer ID: {timer_id}")
+            return
+            
+        current_date = self._get_current_date_string()
+        
+        try:
+            # Toggle in database
+            new_status = self.db.toggle_timer_favorite(current_date, timer_id)
+            
+            # Update the local timer object
+            timer_item = self._get_timer_by_id(timer_id)
+            if timer_item:
+                timer_item.isFavorite = new_status
+            
+            # Reload timers to reflect any propagation or cleanup changes
+            self._load_timers()
+                
+        except Exception as e:
+            logger.error(f"Failed to toggle timer favorite: {e}")
 
     @Slot(int)
     def deleteTimer(self, timer_id: int):

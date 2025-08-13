@@ -691,24 +691,112 @@ class Database:
         self.save_daily_states()
 
     def get_timers_for_date(self, date_str: str) -> List[Dict]:
-        """Get all timers for a specific date (independent per date).
+        """Get all timers for a specific date, including favorited timers from all dates.
         
         Args:
             date_str: Date string in YYYY-MM-DD format
             
         Returns:
-            List of timer dictionaries for that date only
+            List of timer dictionaries for that date, including propagated favorites
         """
         if "daily_timers" not in self.daily_timers:
             self.daily_timers["daily_timers"] = {}
             
-        # Return only the timers that were specifically created for this date
+        # Get existing timers for this date
+        existing_timers = []
         if date_str in self.daily_timers["daily_timers"]:
-            return self.daily_timers["daily_timers"][date_str]
+            existing_timers = self.daily_timers["daily_timers"][date_str]
         
-        # If no timers exist for this date, return empty list
-        # Each date starts with no timers - no propagation from other dates
-        return []
+        # Get existing timer names to avoid duplicates
+        existing_names = {timer["name"] for timer in existing_timers}
+        
+        # Find ALL favorited timers from ALL dates that aren't already on this date
+        favorited_timers = []
+        all_favorited_names = set()
+        
+        # Collect unique favorited timer names from all dates
+        for other_date, timers in self.daily_timers.get("daily_timers", {}).items():
+            for timer in timers:
+                if timer.get("is_favorite", False):
+                    all_favorited_names.add(timer["name"])
+        
+        # Also check global timers for any favorited ones not in daily_timers yet
+        for timer in self.data.get("timers", []):
+            if timer.get("is_favorite", False):
+                all_favorited_names.add(timer["name"])
+        
+        # For each favorited name not on current date, find the best instance to propagate
+        for fav_name in all_favorited_names:
+            if fav_name not in existing_names:
+                # Find the most recent or most used instance of this favorited timer
+                best_timer = None
+                best_date = None
+                
+                # Look through all dates to find the best instance
+                for other_date, timers in self.daily_timers.get("daily_timers", {}).items():
+                    for timer in timers:
+                        if timer["name"] == fav_name and timer.get("is_favorite", False):
+                            if best_timer is None or other_date > best_date:  # More recent date
+                                best_timer = timer
+                                best_date = other_date
+                
+                # If no instance found in daily_timers, check global timers
+                if best_timer is None:
+                    for timer in self.data.get("timers", []):
+                        if timer["name"] == fav_name and timer.get("is_favorite", False):
+                            best_timer = timer
+                            break
+                
+                if best_timer:
+                    # Create a new timer instance for this date with reset times
+                    new_timer = best_timer.copy()
+                    new_timer["id"] = self._get_next_timer_id()
+                    new_timer["elapsed_seconds"] = 0
+                    
+                    # For countdown timers, preserve the most recent countdown value from daily states
+                    # For stopwatch timers, reset countdown to 0
+                    if best_timer["type"] == "countdown" and best_date:
+                        # Get the most recent countdown value from daily states
+                        daily_state = self.get_daily_timer_state(best_timer["id"], best_date)
+                        recent_countdown = daily_state.get("countdown_seconds", best_timer.get("countdown_seconds", 0))
+                        new_timer["countdown_seconds"] = recent_countdown
+                        logger.debug(f"Propagating countdown timer '{fav_name}' with {recent_countdown} seconds")
+                    else:
+                        new_timer["countdown_seconds"] = 0
+                    
+                    new_timer["is_running"] = False
+                    new_timer["is_favorite"] = True  # Ensure favorite status is preserved
+                    # Keep original date_created but track where this instance was propagated to
+                    new_timer["propagated_to"] = date_str
+                    new_timer["created_at"] = datetime.now().isoformat()
+                    new_timer["last_started"] = None
+                    favorited_timers.append(new_timer)
+                    existing_names.add(fav_name)  # Prevent duplicates
+        
+        # Add favorited timers to this date's timer list
+        if favorited_timers:
+            if date_str not in self.daily_timers["daily_timers"]:
+                self.daily_timers["daily_timers"][date_str] = []
+            self.daily_timers["daily_timers"][date_str].extend(favorited_timers)
+            
+            # Also add to global timers table for session compatibility
+            self.data["timers"].extend(favorited_timers)
+            
+            # Create initial daily states for the newly propagated timers
+            for new_timer in favorited_timers:
+                initial_state = {
+                    "elapsed_seconds": new_timer["elapsed_seconds"],
+                    "countdown_seconds": new_timer["countdown_seconds"],
+                    "is_running": False,
+                    "last_started": None
+                }
+                self.update_daily_timer_state(new_timer["id"], date_str, initial_state)
+            
+            self.save_data()
+            self.save_daily_timers()
+        
+        # Return all timers for this date (existing + newly propagated favorites)
+        return self.daily_timers["daily_timers"].get(date_str, [])
         
     def _find_most_recent_timer_date(self, target_date: str) -> Optional[str]:
         """DEPRECATED: No longer used since timers are date-independent."""
@@ -742,6 +830,7 @@ class Database:
             "elapsed_seconds": 0,
             "countdown_seconds": 0,
             "is_running": False,
+            "is_favorite": False,  # New favorite field
             "created_at": datetime.now().isoformat(),
             "last_started": None,
             "date_created": date_str  # Track which date this timer was created on
@@ -798,6 +887,140 @@ class Database:
                 if t["id"] != timer_id
             ]
             self.save_daily_timers()
+
+    def toggle_timer_favorite(self, date_str: str, timer_id: int) -> bool:
+        """Toggle the favorite status of a timer with smart unfavorite logic.
+        
+        When favoriting: Timer appears on all dates going forward
+        When unfavoriting: Timer is removed from all dates where it has no tracked time,
+                          but preserved on dates where time was tracked (for record keeping)
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format
+            timer_id: ID of the timer to toggle
+            
+        Returns:
+            New favorite status (True if now favorite, False if not)
+            
+        Raises:
+            ValidationError: If timer not found
+        """
+        # Find timer in date-specific timers
+        if date_str not in self.daily_timers.get("daily_timers", {}):
+            raise ValidationError(f"No timers found for date {date_str}")
+            
+        timer_found = False
+        new_status = False
+        timer_name = None
+        
+        for timer in self.daily_timers["daily_timers"][date_str]:
+            if timer["id"] == timer_id:
+                timer["is_favorite"] = not timer.get("is_favorite", False)
+                new_status = timer["is_favorite"]
+                timer_name = timer["name"]
+                timer_found = True
+                break
+        
+        if not timer_found:
+            raise ValidationError(f"Timer {timer_id} not found on date {date_str}")
+        
+        # Update all instances of this timer across all dates
+        for other_date, timers in self.daily_timers.get("daily_timers", {}).items():
+            for timer in timers:
+                if timer["name"] == timer_name:  # Match by name since IDs are unique per date
+                    timer["is_favorite"] = new_status
+        
+        # Also update in global timers table
+        for timer in self.data["timers"]:
+            if timer["name"] == timer_name:
+                timer["is_favorite"] = new_status
+        
+        # If unfavoriting, remove from dates where no time was tracked
+        if not new_status:
+            self._clean_unfavorited_timer_instances(timer_name)
+        
+        self.save_daily_timers()
+        self.save_data()
+        
+        logger.info(f"Timer '{timer_name}' favorite status changed to {new_status}")
+        return new_status
+    
+    def _clean_unfavorited_timer_instances(self, timer_name: str):
+        """Remove unfavorited timer instances from dates where no time was tracked.
+        Only removes instances that were propagated (not originally created on that date).
+        
+        Args:
+            timer_name: Name of the timer to clean up
+        """
+        dates_to_clean = []
+        original_dates = set()  # Track dates where this timer was originally created
+        
+        # First, identify dates where this timer was originally created
+        # (not propagated from somewhere else)
+        for date_str, timers in self.daily_timers.get("daily_timers", {}).items():
+            for timer in timers:
+                if (timer["name"] == timer_name and 
+                    timer.get("date_created") == date_str and
+                    "propagated_to" not in timer):
+                    original_dates.add(date_str)
+        
+        logger.debug(f"Cleanup for '{timer_name}': original dates = {original_dates}")
+        
+        # Check all dates that have this timer (not just ones with daily states)
+        for date_str, timers in self.daily_timers.get("daily_timers", {}).items():
+            # Skip if this is an original creation date
+            if date_str in original_dates:
+                continue
+            
+            # Check if timer exists on this date
+            timer_exists = any(t["name"] == timer_name for t in timers)
+            if not timer_exists:
+                continue
+                
+            timer_has_time = False
+            
+            # Check if any timer with this name has tracked time on this date
+            date_states = self.daily_states.get("daily_states", {}).get(date_str, {})
+            for timer_id_str, timer_state in date_states.items():
+                # Find the timer definition to check the name
+                timer_id = int(timer_id_str)
+                timer_def = None
+                
+                # Look in daily timers for this date
+                for timer in timers:
+                    if timer["id"] == timer_id and timer["name"] == timer_name:
+                        timer_def = timer
+                        break
+                
+                # If timer found and has meaningful tracked time, preserve it
+                if timer_def and (timer_state.get("elapsed_seconds", 0) > 0 or 
+                                timer_state.get("countdown_seconds", 0) > 0):
+                    timer_has_time = True
+                    break
+            
+            # If no meaningful time tracked and not an original date, mark for cleanup
+            if not timer_has_time:
+                dates_to_clean.append(date_str)
+        
+        # Remove timer from dates where it was propagated but no time was tracked
+        for date_str in dates_to_clean:
+            # Remove from daily timers
+            original_count = len(self.daily_timers["daily_timers"][date_str])
+            self.daily_timers["daily_timers"][date_str] = [
+                timer for timer in self.daily_timers["daily_timers"][date_str]
+                if timer["name"] != timer_name
+            ]
+            removed_count = original_count - len(self.daily_timers["daily_timers"][date_str])
+            
+            # Also remove corresponding instances from global timers
+            # But only those that were propagated to this date
+            self.data["timers"] = [
+                timer for timer in self.data["timers"]
+                if not (timer["name"] == timer_name and timer.get("propagated_to") == date_str)
+            ]
+        
+        if dates_to_clean:
+            logger.info(f"Cleaned unfavorited timer '{timer_name}' from {len(dates_to_clean)} dates with no tracked time (preserving original creation dates)")
 
     def start_session(self, timer_id: int, project_name: str) -> int:
         """Start a new work session.

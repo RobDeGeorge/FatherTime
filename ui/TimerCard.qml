@@ -23,6 +23,7 @@ Rectangle {
     signal resetTimer()
     signal adjustTime(int seconds)
     signal setCountdown(int seconds)
+    signal toggleFavorite()
     
     RowLayout {
         anchors.fill: parent
@@ -61,6 +62,31 @@ Rectangle {
                 focus: false
                         font.bold: true
                     }
+                }
+                
+                // Favorite star button
+                Button {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    background: Rectangle {
+                        radius: 12
+                        color: "transparent"
+                        border.color: timerItem && timerItem.isFavorite ? warningColor : "#bdc3c7"
+                        border.width: 1
+                    }
+                    
+                    contentItem: Text {
+                        text: "★"
+                        color: timerItem && timerItem.isFavorite ? warningColor : "#bdc3c7"
+                        font.pixelSize: 12
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: toggleFavorite()
+                    
+                    ToolTip.visible: hovered
+                    ToolTip.text: timerItem && timerItem.isFavorite ? "Remove from favorites" : "Add to favorites"
                 }
             }
             
