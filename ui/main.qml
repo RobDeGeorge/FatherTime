@@ -18,6 +18,23 @@ ApplicationWindow {
     property color backgroundColor: configManager.background
     property color textColor: configManager.text
     
+    // Theme cycling keyboard shortcuts
+    Shortcut {
+        sequence: "Ctrl+Alt+Shift+T"
+        onActivated: {
+            themeManager.cycleTheme()
+            console.log("Cycled to theme:", themeManager.getCurrentTheme())
+        }
+    }
+    
+    Shortcut {
+        sequence: "Ctrl+Alt+Shift+Y" 
+        onActivated: {
+            themeManager.cycleThemeBackward()
+            console.log("Cycled backward to theme:", themeManager.getCurrentTheme())
+        }
+    }
+    
     // Navigation properties
     property date currentDate: new Date()
     property int currentMonth: currentDate.getMonth()
@@ -248,7 +265,7 @@ ApplicationWindow {
                                         }
                                         font.pixelSize: 18
                                         font.bold: true
-                                        color: "white"
+                                        color: backgroundColor
                                         opacity: 0.95
                                     }
                                     
@@ -256,7 +273,7 @@ ApplicationWindow {
                                         text: "Total: " + getTotalTimeForCurrentDate()
                                         font.pixelSize: 15
                                         font.bold: true
-                                        color: accentColor
+                                        color: backgroundColor
                                         opacity: 0.95
                                     }
                                 }
@@ -515,7 +532,9 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            color: "white"
+                            color: backgroundColor
+                            border.color: primaryColor
+                            border.width: 1
                             radius: 6
                             
                             GridLayout {
@@ -539,7 +558,7 @@ ApplicationWindow {
                                             text: modelData
                                             font.pixelSize: 9
                                             font.bold: true
-                                            color: "white"
+                                            color: backgroundColor
                                         }
                                     }
                                 }
@@ -589,7 +608,7 @@ ApplicationWindow {
                                         }
                                         
                                         color: {
-                                            if (!isCurrentMonth) return Qt.lighter(backgroundColor, 1.8)
+                                            if (!isCurrentMonth) return Qt.lighter(backgroundColor, 1.2)
                                             if (isSelected) return Qt.lighter(accentColor, 1.5)
                                             if (isToday) return successColor
                                             if (dayData && dayData.rawTotalHours > 0) {
@@ -598,7 +617,7 @@ ApplicationWindow {
                                                 if (hours >= 2) return Qt.lighter(warningColor, 1.8)
                                                 return Qt.lighter(warningColor, 1.9)
                                             }
-                                            return "white"
+                                            return Qt.lighter(backgroundColor, 1.1)
                                         }
                                         
                                         border.color: isSelected ? accentColor : Qt.lighter(backgroundColor, 1.3)
@@ -613,10 +632,10 @@ ApplicationWindow {
                                                 font.pixelSize: 10
                                                 font.bold: isToday || isSelected
                                                 color: {
-                                                    if (isToday) return "white"
-                                                    if (isSelected) return "white" 
+                                                    if (isToday) return backgroundColor
+                                                    if (isSelected) return backgroundColor
                                                     if (isCurrentMonth) return textColor
-                                                    return Qt.darker(textColor, 1.5)
+                                                    return Qt.darker(textColor, 1.8)
                                                 }
                                                 opacity: isCurrentMonth ? 1.0 : 0.6
                                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -657,6 +676,27 @@ ApplicationWindow {
         height: 350
         modal: true
         
+        background: Rectangle {
+            color: backgroundColor
+            border.color: primaryColor
+            border.width: 2
+            radius: 8
+        }
+        
+        header: Rectangle {
+            height: 50
+            color: primaryColor
+            radius: 8
+            
+            Text {
+                anchors.centerIn: parent
+                text: "Add Stopwatch Timer"
+                font.pixelSize: 16
+                font.bold: true
+                color: backgroundColor
+            }
+        }
+        
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 25
@@ -677,6 +717,14 @@ ApplicationWindow {
                 placeholderText: "Timer name..."
                 font.pixelSize: 14
                 selectByMouse: true
+                color: textColor
+                
+                background: Rectangle {
+                    color: cardBackgroundColor
+                    border.color: primaryColor
+                    border.width: parent.activeFocus ? 2 : 1
+                    radius: 4
+                }
             }
             
             Item {
@@ -747,6 +795,27 @@ ApplicationWindow {
         height: 350
         modal: true
         
+        background: Rectangle {
+            color: backgroundColor
+            border.color: primaryColor
+            border.width: 2
+            radius: 8
+        }
+        
+        header: Rectangle {
+            height: 50
+            color: primaryColor
+            radius: 8
+            
+            Text {
+                anchors.centerIn: parent
+                text: "Add Countdown Timer"
+                font.pixelSize: 16
+                font.bold: true
+                color: backgroundColor
+            }
+        }
+        
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 25
@@ -767,6 +836,14 @@ ApplicationWindow {
                 placeholderText: "Timer name..."
                 font.pixelSize: 14
                 selectByMouse: true
+                color: textColor
+                
+                background: Rectangle {
+                    color: cardBackgroundColor
+                    border.color: primaryColor
+                    border.width: parent.activeFocus ? 2 : 1
+                    radius: 4
+                }
             }
             
             ColumnLayout {
@@ -1063,6 +1140,27 @@ ApplicationWindow {
         width: 650
         height: 520
         modal: true
+        
+        background: Rectangle {
+            color: backgroundColor
+            border.color: dangerColor
+            border.width: 3
+            radius: 8
+        }
+        
+        header: Rectangle {
+            height: 60
+            color: dangerColor
+            radius: 8
+            
+            Text {
+                anchors.centerIn: parent
+                text: "⚠️ DANGER: Reset All Data"
+                font.pixelSize: 18
+                font.bold: true
+                color: backgroundColor
+            }
+        }
         
         property alias confirmationSlider: confirmSlider
         

@@ -1,0 +1,15 @@
+{
+  "colors": {
+    "primary": "#c792ea",
+    "secondary": "#7fdbca",
+    "accent": "#82aaff",
+    "success": "#addb67",
+    "danger": "#ef5350",
+    "warning": "#ffcb6b",
+    "background": "#011627",
+    "text": "#d6deeb",
+    "cardBackground": "#1d3b53",
+    "cardBorder": "#5f7a95"
+  },
+  "currentTheme": "nightOwl"
+}

@@ -36,10 +36,12 @@ class ConfigManager(QObject):
         )
 
         try:
-            self._colors = self._load_colors()
+            self._config_data = self._load_config()
+            self._colors = self._config_data.get("colors", DEFAULT_COLORS.copy())
             logger.info(f"Config loaded from {self.config_file}")
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
+            self._config_data = {"colors": DEFAULT_COLORS.copy()}
             self._colors = DEFAULT_COLORS.copy()
             logger.info("Using default colors")
 
@@ -126,21 +128,23 @@ class ConfigManager(QObject):
             
         return self.data_dir / config_file
 
-    def _load_colors(self) -> Dict[str, str]:
-        """Load color configuration from file.
+    def _load_config(self) -> Dict[str, Any]:
+        """Load full configuration from file.
 
         Returns:
-            Dictionary of color values
+            Dictionary of config values
 
         Raises:
             ConfigError: If config cannot be loaded or is invalid
         """
+        default_config = {"colors": DEFAULT_COLORS}
+        
         if not self.config_file.exists():
             logger.info(
                 f"Config file {self.config_file} does not exist, creating default"
             )
-            self._save_config({"colors": DEFAULT_COLORS})
-            return DEFAULT_COLORS.copy()
+            self._save_config(default_config)
+            return default_config
 
         try:
             with open(self.config_file, "r", encoding="utf-8") as f:
@@ -152,16 +156,18 @@ class ConfigManager(QObject):
             colors = config.get("colors", {})
             if not isinstance(colors, dict):
                 logger.warning("Invalid colors section in config, using defaults")
-                return DEFAULT_COLORS.copy()
-
-            # Merge with defaults to ensure all required colors exist
-            result_colors = DEFAULT_COLORS.copy()
-            result_colors.update(colors)
+                colors = DEFAULT_COLORS.copy()
+            else:
+                # Merge with defaults to ensure all required colors exist
+                merged_colors = DEFAULT_COLORS.copy()
+                merged_colors.update(colors)
+                colors = merged_colors
 
             # Validate color values
-            self._validate_colors(result_colors)
+            self._validate_colors(colors)
+            config["colors"] = colors
 
-            return result_colors
+            return config
 
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in config file: {e}")
@@ -268,7 +274,8 @@ class ConfigManager(QObject):
     def reload_colors(self) -> None:
         """Reload colors from config file and emit change signal."""
         try:
-            self._colors = self._load_colors()
+            self._config_data = self._load_config()
+            self._colors = self._config_data.get("colors", DEFAULT_COLORS.copy())
             self.colorsChanged.emit()
             logger.info("Colors reloaded successfully")
         except ConfigError as e:
@@ -294,11 +301,61 @@ class ConfigManager(QObject):
 
         # Update colors
         self._colors[key] = value
+        self._config_data["colors"] = self._colors
 
         # Save to file
-        config = {"colors": self._colors}
-        self._save_config(config)
+        self._save_config(self._config_data)
 
         # Emit change signal
         self.colorsChanged.emit()
         logger.info(f"Color {key} updated to {value}")
+
+    def get_value(self, key: str, default: Any = None) -> Any:
+        """Get a configuration value.
+
+        Args:
+            key: Configuration key (can use dot notation like "colors.primary")
+            default: Default value if key not found
+
+        Returns:
+            Configuration value or default
+        """
+        keys = key.split(".")
+        value = self._config_data
+        
+        try:
+            for k in keys:
+                value = value[k]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    def set_value(self, key: str, value: Any) -> None:
+        """Set a configuration value.
+
+        Args:
+            key: Configuration key (can use dot notation like "colors.primary")
+            value: Value to set
+        """
+        keys = key.split(".")
+        config = self._config_data
+        
+        # Navigate to parent of the key to set
+        for k in keys[:-1]:
+            if k not in config:
+                config[k] = {}
+            config = config[k]
+        
+        # Set the value
+        config[keys[-1]] = value
+        
+        # If we're updating colors, also update the local colors dict
+        if keys[0] == "colors" and len(keys) == 2:
+            self._colors[keys[1]] = value
+        
+        # Save to file
+        self._save_config(self._config_data)
+        
+        # Emit change signal if colors were updated
+        if keys[0] == "colors":
+            self.colorsChanged.emit()

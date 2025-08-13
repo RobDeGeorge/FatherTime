@@ -15,6 +15,7 @@ from src.fathertime.config_manager import ConfigManager
 from src.fathertime.exceptions import FatherTimeError
 from src.fathertime.logger import logger
 from src.fathertime.timer_manager import TimerManager
+from src.fathertime.theme_manager import ThemeManager
 
 
 def setup_qt_environment() -> None:
@@ -66,6 +67,8 @@ def main() -> int:
         try:
             timer_manager = TimerManager()
             config_manager = ConfigManager()
+            theme_manager = ThemeManager(config_manager)
+            theme_manager.initialize_theme()
         except FatherTimeError as e:
             logger.error(f"Failed to initialize managers: {e}")
             return 1
@@ -73,6 +76,7 @@ def main() -> int:
         # Set context properties
         engine.rootContext().setContextProperty("timerManager", timer_manager)
         engine.rootContext().setContextProperty("configManager", config_manager)
+        engine.rootContext().setContextProperty("themeManager", theme_manager)
 
         # Load QML
         if not load_qml(engine):

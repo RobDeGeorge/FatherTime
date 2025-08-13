@@ -1,0 +1,15 @@
+{
+  "colors": {
+    "primary": "#7aa2f7",
+    "secondary": "#9ece6a",
+    "accent": "#bb9af7",
+    "success": "#9ece6a",
+    "danger": "#f7768e",
+    "warning": "#e0af68",
+    "background": "#1a1b26",
+    "text": "#c0caf5",
+    "cardBackground": "#24283b",
+    "cardBorder": "#414868"
+  },
+  "currentTheme": "tokyoNight"
+}
