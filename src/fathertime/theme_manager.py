@@ -268,12 +268,16 @@ class ThemeManager(QObject):
     def setTheme(self, theme_key):
         """Set current theme"""
         themes = self.get_builtin_themes()
+        logger.info(f"setTheme called with: {theme_key}")
+        
         if theme_key in themes:
             if self._current_theme != theme_key:
+                logger.info(f"Changing theme from {self._current_theme} to {theme_key}")
                 self._current_theme = theme_key
                 
                 # Update config manager with new colors
                 theme_colors = themes[theme_key]
+                
                 for color_key, color_value in theme_colors.items():
                     if color_key != "name":  # Skip the name field
                         self.config_manager.set_value(f"colors.{color_key}", color_value)
@@ -282,7 +286,11 @@ class ThemeManager(QObject):
                 self.config_manager.set_value("currentTheme", theme_key)
                 
                 self.themeChanged.emit()
-                logger.info(f"Theme changed to: {theme_colors['name']}")
+                logger.info(f"Theme successfully changed to: {theme_colors['name']}")
+            else:
+                logger.info(f"Theme {theme_key} is already current")
+        else:
+            logger.error(f"Theme '{theme_key}' not found! Available: {list(themes.keys())}")
     
     @Slot()
     def cycleTheme(self):

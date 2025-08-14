@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import Qt5Compat.GraphicalEffects
 
 ApplicationWindow {
     id: window
@@ -20,12 +21,29 @@ ApplicationWindow {
     property color cardBackgroundColor: configManager.cardBackground
     property color cardBorderColor: configManager.cardBorder
     
+    // Force refresh colors when theme changes
+    Connections {
+        target: themeManager
+        function onThemeChanged() {
+            // Force refresh of all color bindings
+            primaryColor = configManager.primary
+            secondaryColor = configManager.secondary
+            accentColor = configManager.accent
+            successColor = configManager.success
+            dangerColor = configManager.danger
+            warningColor = configManager.warning
+            backgroundColor = configManager.background
+            textColor = configManager.text
+            cardBackgroundColor = configManager.cardBackground
+            cardBorderColor = configManager.cardBorder
+        }
+    }
+    
     // Theme cycling keyboard shortcuts
     Shortcut {
         sequence: "Ctrl+Alt+Shift+T"
         onActivated: {
             themeManager.cycleTheme()
-            console.log("Cycled to theme:", themeManager.getCurrentTheme())
         }
     }
     
@@ -1434,6 +1452,44 @@ ApplicationWindow {
         }
     }
     
+    // Settings button in top right corner
+    Button {
+        id: settingsButton
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: 10
+        anchors.rightMargin: 10
+        width: 32
+        height: 32
+        z: 100  // High z-order to appear above other content
+        
+        background: Rectangle {
+            color: parent.pressed ? Qt.darker(primaryColor, 1.2) : primaryColor
+            radius: 4
+            border.color: backgroundColor
+            border.width: 1
+            opacity: 0.9
+        }
+        
+        contentItem: Text {
+            text: "⚙"
+            color: backgroundColor
+            font.pixelSize: 16
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+        
+        onClicked: {
+            settingsDialog.open()
+            restoreFocus()
+        }
+        
+        // Tooltip-like behavior
+        ToolTip.text: "Settings"
+        ToolTip.visible: hovered
+        ToolTip.delay: 500
+    }
+    
     // Rename Timer Dialog
     Dialog {
         id: renameTimerDialog
@@ -1608,6 +1664,322 @@ ApplicationWindow {
                             timerManager.renameTimer(renameTimerDialog.currentTimer.id, renameTextField.text.trim())
                             renameTimerDialog.close()
                             renameTextField.text = ""
+                            restoreFocus()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Settings Dialog
+    Dialog {
+        id: settingsDialog
+        title: "Settings"
+        anchors.centerIn: parent
+        width: 800
+        height: 650
+        modal: true
+        
+        background: Rectangle {
+            color: backgroundColor
+            border.color: primaryColor
+            border.width: 2
+            radius: 8
+        }
+        
+        header: Rectangle {
+            height: 50
+            color: primaryColor
+            radius: 8
+            
+            Text {
+                anchors.centerIn: parent
+                text: "⚙ Settings"
+                font.pixelSize: 16
+                font.bold: true
+                color: backgroundColor
+            }
+        }
+        
+        ScrollView {
+            anchors.fill: parent
+            anchors.margins: 20
+            contentWidth: availableWidth
+            
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            
+            ColumnLayout {
+                width: parent.width
+                spacing: 25
+                
+                // Appearance Section
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: appearanceContent.implicitHeight + 40
+                    color: cardBackgroundColor
+                    border.color: cardBorderColor
+                    border.width: 1
+                    radius: 12
+                    
+                    ColumnLayout {
+                        id: appearanceContent
+                        anchors.fill: parent
+                        anchors.margins: 20
+                        spacing: 20
+                        
+                        // Section header
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            
+                            Rectangle {
+                                width: 32
+                                height: 32
+                                color: Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.15)
+                                radius: 8
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "🎨"
+                                    font.pixelSize: 18
+                                }
+                            }
+                            
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                
+                                Text {
+                                    text: "Appearance"
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                    color: textColor
+                                }
+                                
+                                Text {
+                                    text: "Customize the visual theme and colors"
+                                    font.pixelSize: 12
+                                    color: Qt.darker(textColor, 1.3)
+                                    opacity: 0.8
+                                }
+                            }
+                        }
+                        
+                        // Theme selection with chips
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 15
+                            
+                            Text {
+                                text: "Color Theme"
+                                font.pixelSize: 14
+                                font.weight: Font.Medium
+                                color: textColor
+                            }
+                            
+                            // Theme chips grid
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                
+                                property var themeNames: [
+                                    { key: "default", name: "Default" },
+                                    { key: "dracula", name: "Dracula" },
+                                    { key: "nightOwl", name: "Night Owl" },
+                                    { key: "githubDark", name: "GitHub Dark" },
+                                    { key: "catppuccin", name: "Catppuccin" },
+                                    { key: "tokyoNight", name: "Tokyo Night" },
+                                    { key: "gruvboxDark", name: "Gruvbox Dark" },
+                                    { key: "nordDark", name: "Nord Dark" },
+                                    { key: "oneDark", name: "One Dark" },
+                                    { key: "solarizedLight", name: "Solarized Light" },
+                                    { key: "solarizedDark", name: "Solarized Dark" },
+                                    { key: "materialLight", name: "Material Light" },
+                                    { key: "highContrast", name: "High Contrast" },
+                                    { key: "cyberpunk", name: "Cyberpunk" },
+                                    { key: "forest", name: "Forest" },
+                                    { key: "ocean", name: "Ocean" }
+                                ]
+                                
+                                Repeater {
+                                    model: parent.themeNames
+                                    
+                                    Rectangle {
+                                        width: chipContent.implicitWidth + 16
+                                        height: 40
+                                        radius: 20
+                                        
+                                        property bool isSelected: themeManager.getCurrentTheme() === modelData.key
+                                        property bool hovered: false
+                                        property var themeColors: themeManager.getTheme(modelData.key)
+                                        
+                                        color: {
+                                            if (isSelected) return accentColor
+                                            if (hovered) return Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.1)
+                                            return cardBackgroundColor
+                                        }
+                                        
+                                        border.color: {
+                                            if (isSelected) return accentColor
+                                            if (hovered) return Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.4)
+                                            return cardBorderColor
+                                        }
+                                        border.width: isSelected ? 2 : 1
+                                        
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                                        
+                                        RowLayout {
+                                            id: chipContent
+                                            anchors.centerIn: parent
+                                            spacing: 8
+                                            
+                                            // Color preview dots using actual theme colors
+                                            Row {
+                                                spacing: 2
+                                                
+                                                Rectangle {
+                                                    width: 12
+                                                    height: 12
+                                                    radius: 6
+                                                    color: parent.parent.parent.themeColors.background || "#ecf0f1"
+                                                    border.color: Qt.darker(color, 1.3)
+                                                    border.width: 1
+                                                }
+                                                
+                                                Rectangle {
+                                                    width: 12
+                                                    height: 12
+                                                    radius: 6
+                                                    color: parent.parent.parent.themeColors.primary || "#3498db"
+                                                    border.color: Qt.darker(color, 1.3)
+                                                    border.width: 1
+                                                }
+                                                
+                                                Rectangle {
+                                                    width: 12
+                                                    height: 12
+                                                    radius: 6
+                                                    color: parent.parent.parent.themeColors.accent || "#2ecc71"
+                                                    border.color: Qt.darker(color, 1.3)
+                                                    border.width: 1
+                                                }
+                                            }
+                                            
+                                            Text {
+                                                text: modelData.name
+                                                font.pixelSize: 12
+                                                font.weight: parent.parent.isSelected ? Font.Medium : Font.Normal
+                                                color: parent.parent.isSelected ? "white" : textColor
+                                            }
+                                        }
+                                        
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onEntered: parent.hovered = true
+                                            onExited: parent.hovered = false
+                                            onClicked: {
+                                                themeManager.setTheme(modelData.key)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Keyboard shortcut info
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 35
+                                color: Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.05)
+                                radius: 8
+                                border.color: Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.15)
+                                border.width: 1
+                                
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 10
+                                    spacing: 8
+                                    
+                                    Text {
+                                        text: "💡"
+                                        font.pixelSize: 14
+                                    }
+                                    
+                                    Text {
+                                        text: "Quick cycling:"
+                                        font.pixelSize: 11
+                                        color: textColor
+                                        opacity: 0.8
+                                    }
+                                    
+                                    Rectangle {
+                                        Layout.preferredWidth: shortcutText.implicitWidth + 8
+                                        Layout.preferredHeight: 20
+                                        color: Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.1)
+                                        radius: 3
+                                        border.color: Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.2)
+                                        border.width: 1
+                                        
+                                        Text {
+                                            id: shortcutText
+                                            anchors.centerIn: parent
+                                            text: "Ctrl+Alt+Shift+T"
+                                            font.pixelSize: 9
+                                            font.family: "monospace"
+                                            color: textColor
+                                            opacity: 0.9
+                                        }
+                                    }
+                                    
+                                    Item { Layout.fillWidth: true }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Future sections can be added here
+                // For example:
+                // - General Settings section
+                // - Timer Settings section  
+                // - Data Management section
+                // etc.
+                
+                Item {
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 20
+                }
+                
+                // Close button
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 10
+                    
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                    
+                    Button {
+                        text: "Done"
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 40
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker(primaryColor, 1.2) : primaryColor
+                            radius: 8
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: backgroundColor
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+                        onClicked: {
+                            settingsDialog.close()
                             restoreFocus()
                         }
                     }

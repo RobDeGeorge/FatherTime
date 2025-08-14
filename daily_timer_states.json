@@ -1,20 +1,3 @@
 {
-  "daily_states": {
-    "2025-08-14": {
-      "1": {
-        "elapsed_seconds": 420,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": null
-      },
-      "2": {
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": null
-      }
-    }
-  }
+  "daily_states": {}
 }

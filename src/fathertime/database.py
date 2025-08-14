@@ -1190,21 +1190,23 @@ class Database:
         """Reset all data to initial state"""
         # Reset timers data
         self.data = {"timers": [], "next_id": 1}
-        self.save_data()
+        self.save_data(immediate=True)
 
         # Reset sessions data
         self.sessions = {"sessions": []}
-        self.save_sessions()
+        self.save_sessions(immediate=True)
 
         # Reset daily states data
         self.daily_states = {"daily_states": {}}
-        self.save_daily_states()
+        self.save_daily_states(immediate=True)
         
         # Reset daily timers data
         self.daily_timers = {"daily_timers": {}}
-        self.save_daily_timers()
+        self.save_daily_timers(immediate=True)
 
         # Remove stats file if it exists
         stats_file = "stats.json"
         if os.path.exists(stats_file):
             os.remove(stats_file)
+            
+        logger.info("All data has been reset successfully")
