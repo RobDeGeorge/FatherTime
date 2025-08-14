@@ -1165,8 +1165,8 @@ ApplicationWindow {
         id: resetDataDialog
         title: "⚠️ Reset All Data"
         anchors.centerIn: parent
-        width: 650
-        height: 520
+        width: 700
+        height: 580
         modal: true
         
         background: Rectangle {
@@ -1199,8 +1199,8 @@ ApplicationWindow {
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 30
-            spacing: 18
+            anchors.margins: 25
+            spacing: 20
             
             Text {
                 text: "⚠️ DANGER: Complete Data Reset"
@@ -1271,7 +1271,8 @@ ApplicationWindow {
                         color: dangerColor
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
-                        Layout.topMargin: 8
+                        Layout.topMargin: 15
+                        Layout.bottomMargin: 10
                         wrapMode: Text.WordWrap
                         Layout.maximumWidth: parent.width - 40
                     }
@@ -1439,7 +1440,7 @@ ApplicationWindow {
         title: "Rename Timer"
         anchors.centerIn: parent
         width: 500
-        height: 230
+        height: 280
         modal: true
         
         property var currentTimer: null
@@ -1491,8 +1492,8 @@ ApplicationWindow {
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 25
-            spacing: 20
+            anchors.margins: 20
+            spacing: 12
             
             Text {
                 text: (renameTimerDialog.currentTimer && renameTimerDialog.currentTimer.name) ? 
@@ -1532,16 +1533,20 @@ ApplicationWindow {
                 }
             }
             
-            // Warning text for duplicate names
+            // Warning text for duplicate names (fixed height to prevent layout shifting)
             Text {
                 text: renameTimerDialog.isNameTaken(renameTextField.text) ? "⚠ A timer with this name already exists" : ""
                 color: dangerColor
                 font.pixelSize: 12
                 Layout.fillWidth: true
-                visible: text !== ""
+                Layout.preferredHeight: 20
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignLeft
-                Layout.topMargin: 5
+                Layout.topMargin: 3
+                opacity: text !== "" ? 1.0 : 0.0
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
             }
             
             Item {

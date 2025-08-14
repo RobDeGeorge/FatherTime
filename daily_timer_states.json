@@ -2,7 +2,7 @@
   "daily_states": {
     "2025-08-14": {
       "1": {
-        "elapsed_seconds": 0,
+        "elapsed_seconds": 420,
         "countdown_seconds": 0,
         "initial_countdown_seconds": 0,
         "is_running": false,
