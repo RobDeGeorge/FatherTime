@@ -574,6 +574,7 @@ class Database:
             "type": timer_type,
             "elapsed_seconds": 0,
             "countdown_seconds": 0,
+            "initial_countdown_seconds": 0,
             "is_running": False,
             "created_at": datetime.now().isoformat(),
             "last_started": None,
@@ -657,6 +658,7 @@ class Database:
             self.daily_states["daily_states"][date_str][str(timer_id)] = {
                 "elapsed_seconds": 0,
                 "countdown_seconds": 0,
+                "initial_countdown_seconds": 0,
                 "is_running": False,
                 "last_started": None
             }
@@ -683,6 +685,7 @@ class Database:
             self.daily_states["daily_states"][date_str][str(timer_id)] = {
                 "elapsed_seconds": 0,
                 "countdown_seconds": 0,
+                "initial_countdown_seconds": 0,
                 "is_running": False,
                 "last_started": None
             }
@@ -759,10 +762,13 @@ class Database:
                         # Get the most recent countdown value from daily states
                         daily_state = self.get_daily_timer_state(best_timer["id"], best_date)
                         recent_countdown = daily_state.get("countdown_seconds", best_timer.get("countdown_seconds", 0))
+                        initial_countdown = daily_state.get("initial_countdown_seconds", best_timer.get("initial_countdown_seconds", 0))
                         new_timer["countdown_seconds"] = recent_countdown
-                        logger.debug(f"Propagating countdown timer '{fav_name}' with {recent_countdown} seconds")
+                        new_timer["initial_countdown_seconds"] = initial_countdown
+                        logger.debug(f"Propagating countdown timer '{fav_name}' with {recent_countdown} seconds (initial: {initial_countdown})")
                     else:
                         new_timer["countdown_seconds"] = 0
+                        new_timer["initial_countdown_seconds"] = 0
                     
                     new_timer["is_running"] = False
                     new_timer["is_favorite"] = True  # Ensure favorite status is preserved
@@ -787,6 +793,7 @@ class Database:
                 initial_state = {
                     "elapsed_seconds": new_timer["elapsed_seconds"],
                     "countdown_seconds": new_timer["countdown_seconds"],
+                    "initial_countdown_seconds": new_timer["initial_countdown_seconds"],
                     "is_running": False,
                     "last_started": None
                 }
@@ -829,6 +836,7 @@ class Database:
             "type": timer_type,
             "elapsed_seconds": 0,
             "countdown_seconds": 0,
+            "initial_countdown_seconds": 0,
             "is_running": False,
             "is_favorite": False,  # New favorite field
             "created_at": datetime.now().isoformat(),
@@ -877,6 +885,53 @@ class Database:
         # No longer propagating timers - each date is independent
         pass
         
+    def rename_timer_on_date(self, date_str: str, timer_id: int, new_name: str) -> None:
+        """Rename a timer on a specific date.
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format
+            timer_id: ID of the timer to rename
+            new_name: New name for the timer
+            
+        Raises:
+            ValidationError: If new name already exists or is invalid
+        """
+        # Sanitize the new name
+        new_name = self._sanitize_timer_name(new_name)
+        
+        # Check for duplicate names on this date (excluding the timer being renamed)
+        if ("daily_timers" in self.daily_timers and 
+            date_str in self.daily_timers["daily_timers"]):
+            
+            for timer in self.daily_timers["daily_timers"][date_str]:
+                if timer["id"] != timer_id and timer["name"].lower() == new_name.lower():
+                    raise ValidationError(f"A timer with name '{new_name}' already exists on {date_str}")
+        
+        # Update in date-specific timers
+        timer_found = False
+        if ("daily_timers" in self.daily_timers and 
+            date_str in self.daily_timers["daily_timers"]):
+            
+            for timer in self.daily_timers["daily_timers"][date_str]:
+                if timer["id"] == timer_id:
+                    old_name = timer["name"]
+                    timer["name"] = new_name
+                    timer_found = True
+                    logger.info(f"Timer {timer_id} renamed from '{old_name}' to '{new_name}' on {date_str}")
+                    break
+        
+        # Update in global timers (for session compatibility)
+        for timer in self.data["timers"]:
+            if timer["id"] == timer_id:
+                timer["name"] = new_name
+                break
+        
+        if not timer_found:
+            raise ValidationError(f"Timer with ID {timer_id} not found on {date_str}")
+        
+        self.save_daily_timers()
+        self.save_data()
+
     def remove_timer_from_date(self, date_str: str, timer_id: int):
         """Remove a timer from a specific date."""
         if (date_str in self.daily_timers.get("daily_timers", {}) and 

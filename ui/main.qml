@@ -17,6 +17,8 @@ ApplicationWindow {
     property color warningColor: configManager.warning
     property color backgroundColor: configManager.background
     property color textColor: configManager.text
+    property color cardBackgroundColor: configManager.cardBackground
+    property color cardBorderColor: configManager.cardBorder
     
     // Theme cycling keyboard shortcuts
     Shortcut {
@@ -42,6 +44,15 @@ ApplicationWindow {
     property string selectedDateForTimers: new Date().toISOString().split('T')[0]
     property int selectedCellIndex: -1
     property bool navigating: false
+    
+    // Timer selection properties
+    property int selectedTimerIndex: -1
+    property var selectedTimerItem: {
+        if (selectedTimerIndex >= 0 && timerManager.timers && selectedTimerIndex < timerManager.timers.length) {
+            return timerManager.timers[selectedTimerIndex]
+        }
+        return null
+    }
     
     property Timer navigationTimer: Timer {
         id: navigationTimer
@@ -205,6 +216,18 @@ ApplicationWindow {
         Shortcut {
             sequence: "Space"
             onActivated: navigateToToday()
+        }
+        Shortcut {
+            sequence: "F2"
+            onActivated: {
+                if (selectedTimerItem) {
+                    renameTimerDialog.openForTimer(selectedTimerItem)
+                } else if (timerManager.timers.length > 0) {
+                    // If no timer selected, use the first timer directly
+                    var firstTimer = timerManager.timers[0]
+                    renameTimerDialog.openForTimer(firstTimer)
+                }
+            }
         }
         
         Rectangle {
@@ -370,6 +393,7 @@ ApplicationWindow {
                                 delegate: TimerCard {
                                     width: timersListView.width
                                     timerItem: modelData
+                                    isSelected: selectedTimerIndex === index
                                     onDeleteTimer: timerManager.deleteTimer(timerItem.id)
                                     onStartTimer: timerManager.startTimer(timerItem.id)
                                     onStopTimer: timerManager.stopTimer(timerItem.id)
@@ -377,6 +401,10 @@ ApplicationWindow {
                                     onAdjustTime: timerManager.adjustTime(timerItem.id, seconds)
                                     onSetCountdown: timerManager.setCountdownTime(timerItem.id, seconds)
                                     onToggleFavorite: timerManager.toggleTimerFavorite(timerItem.id)
+                                    onSelectTimer: {
+                                        selectedTimerIndex = index
+                                        restoreFocus()
+                                    }
                                 }
                             }
                         }
@@ -721,7 +749,7 @@ ApplicationWindow {
                 
                 background: Rectangle {
                     color: cardBackgroundColor
-                    border.color: primaryColor
+                    border.color: parent.activeFocus ? accentColor : cardBorderColor
                     border.width: parent.activeFocus ? 2 : 1
                     radius: 4
                 }
@@ -840,7 +868,7 @@ ApplicationWindow {
                 
                 background: Rectangle {
                     color: cardBackgroundColor
-                    border.color: primaryColor
+                    border.color: parent.activeFocus ? accentColor : cardBorderColor
                     border.width: parent.activeFocus ? 2 : 1
                     radius: 4
                 }
@@ -878,16 +906,16 @@ ApplicationWindow {
                             textFromValue: function(value, locale) { return value + "h" }
                             
                             background: Rectangle {
-                                color: "white"
-                                border.color: primaryColor
-                                border.width: 2
+                                color: cardBackgroundColor
+                                border.color: hoursSpinBox.activeFocus ? accentColor : cardBorderColor
+                                border.width: hoursSpinBox.activeFocus ? 2 : 1
                                 radius: 6
                             }
                             
                             contentItem: Text {
                                 text: hoursSpinBox.textFromValue(hoursSpinBox.value, hoursSpinBox.locale)
                                 font: hoursSpinBox.font
-                                color: primaryColor
+                                color: textColor
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -896,14 +924,14 @@ ApplicationWindow {
                                 x: hoursSpinBox.mirrored ? 0 : parent.width - width
                                 height: parent.height / 2
                                 width: 30
-                                color: hoursSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: hoursSpinBox.up.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "+"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -913,14 +941,14 @@ ApplicationWindow {
                                 y: parent.height / 2
                                 height: parent.height / 2
                                 width: 30
-                                color: hoursSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: hoursSpinBox.down.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "-"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -945,16 +973,16 @@ ApplicationWindow {
                             textFromValue: function(value, locale) { return value + "m" }
                             
                             background: Rectangle {
-                                color: "white"
-                                border.color: primaryColor
-                                border.width: 2
+                                color: cardBackgroundColor
+                                border.color: minutesSpinBox.activeFocus ? accentColor : cardBorderColor
+                                border.width: minutesSpinBox.activeFocus ? 2 : 1
                                 radius: 6
                             }
                             
                             contentItem: Text {
                                 text: minutesSpinBox.textFromValue(minutesSpinBox.value, minutesSpinBox.locale)
                                 font: minutesSpinBox.font
-                                color: primaryColor
+                                color: textColor
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -963,14 +991,14 @@ ApplicationWindow {
                                 x: minutesSpinBox.mirrored ? 0 : parent.width - width
                                 height: parent.height / 2
                                 width: 30
-                                color: minutesSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: minutesSpinBox.up.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "+"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -980,14 +1008,14 @@ ApplicationWindow {
                                 y: parent.height / 2
                                 height: parent.height / 2
                                 width: 30
-                                color: minutesSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: minutesSpinBox.down.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "-"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -1012,16 +1040,16 @@ ApplicationWindow {
                             textFromValue: function(value, locale) { return value + "s" }
                             
                             background: Rectangle {
-                                color: "white"
-                                border.color: primaryColor
-                                border.width: 2
+                                color: cardBackgroundColor
+                                border.color: secondsSpinBox.activeFocus ? accentColor : cardBorderColor
+                                border.width: secondsSpinBox.activeFocus ? 2 : 1
                                 radius: 6
                             }
                             
                             contentItem: Text {
                                 text: secondsSpinBox.textFromValue(secondsSpinBox.value, secondsSpinBox.locale)
                                 font: secondsSpinBox.font
-                                color: primaryColor
+                                color: textColor
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -1030,14 +1058,14 @@ ApplicationWindow {
                                 x: secondsSpinBox.mirrored ? 0 : parent.width - width
                                 height: parent.height / 2
                                 width: 30
-                                color: secondsSpinBox.up.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: secondsSpinBox.up.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "+"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -1047,14 +1075,14 @@ ApplicationWindow {
                                 y: parent.height / 2
                                 height: parent.height / 2
                                 width: 30
-                                color: secondsSpinBox.down.pressed ? "#e0e0e0" : "#f0f0f0"
-                                border.color: primaryColor
+                                color: secondsSpinBox.down.pressed ? Qt.darker(cardBackgroundColor, 1.1) : Qt.lighter(cardBackgroundColor, 1.05)
+                                border.color: cardBorderColor
                                 border.width: 1
                                 
                                 Text {
                                     text: "-"
                                     font.pixelSize: 12
-                                    color: primaryColor
+                                    color: textColor
                                     anchors.centerIn: parent
                                 }
                             }
@@ -1399,6 +1427,184 @@ ApplicationWindow {
                         timerManager.resetAllData()
                         confirmSlider.value = 0  // Reset slider
                         resetDataDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    
+    // Rename Timer Dialog
+    Dialog {
+        id: renameTimerDialog
+        title: "Rename Timer"
+        anchors.centerIn: parent
+        width: 500
+        height: 230
+        modal: true
+        
+        property var currentTimer: null
+        
+        function isNameTaken(newName) {
+            if (!newName || newName.trim() === "") return false
+            var trimmedName = newName.trim().toLowerCase()
+            
+            for (var i = 0; i < timerManager.timers.length; i++) {
+                var timer = timerManager.timers[i]
+                // Skip the current timer being renamed
+                if (currentTimer && timer.id === currentTimer.id) continue
+                // Check if name matches (case-insensitive)
+                if (timer.name.toLowerCase() === trimmedName) return true
+            }
+            return false
+        }
+        
+        function openForTimer(timer) {
+            currentTimer = timer
+            if (timer) {
+                renameTextField.text = timer.name
+                open()
+                renameTextField.selectAll()
+                renameTextField.forceActiveFocus()
+            }
+        }
+        
+        background: Rectangle {
+            color: backgroundColor
+            border.color: primaryColor
+            border.width: 2
+            radius: 8
+        }
+        
+        header: Rectangle {
+            height: 50
+            color: primaryColor
+            radius: 8
+            
+            Text {
+                anchors.centerIn: parent
+                text: "Rename Timer"
+                font.pixelSize: 16
+                font.bold: true
+                color: backgroundColor
+            }
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 25
+            spacing: 20
+            
+            Text {
+                text: (renameTimerDialog.currentTimer && renameTimerDialog.currentTimer.name) ? 
+                      "Enter a new name for \"" + renameTimerDialog.currentTimer.name + "\":" : 
+                      "Enter a new name for the timer:"
+                font.pixelSize: 14
+                color: textColor
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+            }
+            
+            TextField {
+                id: renameTextField
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
+                placeholderText: "Timer name..."
+                font.pixelSize: 14
+                selectByMouse: true
+                color: textColor
+                
+                background: Rectangle {
+                    color: cardBackgroundColor
+                    border.color: parent.activeFocus ? accentColor : cardBorderColor
+                    border.width: parent.activeFocus ? 2 : 1
+                    radius: 4
+                }
+                
+                Keys.onReturnPressed: {
+                    if (renameConfirmButton.enabled) {
+                        renameConfirmButton.clicked()
+                    }
+                }
+                Keys.onEnterPressed: {
+                    if (renameConfirmButton.enabled) {
+                        renameConfirmButton.clicked()
+                    }
+                }
+            }
+            
+            // Warning text for duplicate names
+            Text {
+                text: renameTimerDialog.isNameTaken(renameTextField.text) ? "⚠ A timer with this name already exists" : ""
+                color: dangerColor
+                font.pixelSize: 12
+                Layout.fillWidth: true
+                visible: text !== ""
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignLeft
+                Layout.topMargin: 5
+            }
+            
+            Item {
+                Layout.fillHeight: true
+            }
+            
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 15
+                
+                Item {
+                    Layout.fillWidth: true
+                }
+                
+                Button {
+                    text: "Cancel"
+                    Layout.preferredWidth: 70
+                    Layout.preferredHeight: 32
+                    background: Rectangle {
+                        color: parent.pressed ? Qt.darker("#bdc3c7") : "#bdc3c7"
+                        radius: 5
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 11
+                    }
+                    onClicked: {
+                        renameTimerDialog.close()
+                        renameTextField.text = ""
+                        restoreFocus()
+                    }
+                }
+                
+                Button {
+                    id: renameConfirmButton
+                    text: "Rename"
+                    enabled: renameTextField.text.trim() !== "" && 
+                             renameTextField.text.trim() !== (renameTimerDialog.currentTimer ? renameTimerDialog.currentTimer.name : "") &&
+                             !renameTimerDialog.isNameTaken(renameTextField.text)
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 32
+                    background: Rectangle {
+                        color: parent.enabled ? (parent.pressed ? Qt.darker(accentColor) : accentColor) : "#bdc3c7"
+                        radius: 5
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
+                    onClicked: {
+                        if (renameTimerDialog.currentTimer && renameTextField.text.trim() !== "") {
+                            timerManager.renameTimer(renameTimerDialog.currentTimer.id, renameTextField.text.trim())
+                            renameTimerDialog.close()
+                            renameTextField.text = ""
+                            restoreFocus()
+                        }
                     }
                 }
             }

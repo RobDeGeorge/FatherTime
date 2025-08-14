@@ -1,15 +1,15 @@
 {
   "colors": {
-    "primary": "#ff6b35",
-    "secondary": "#f7931e",
-    "accent": "#ffb347",
-    "success": "#32cd32",
-    "danger": "#ff4500",
-    "warning": "#ffd700",
-    "background": "#2c1810",
-    "text": "#fff8dc",
-    "cardBackground": "#4a2c17",
-    "cardBorder": "#ff6b35"
+    "primary": "#268bd2",
+    "secondary": "#93a1a1",
+    "accent": "#2aa198",
+    "success": "#859900",
+    "danger": "#dc322f",
+    "warning": "#b58900",
+    "background": "#fdf6e3",
+    "text": "#586e75",
+    "cardBackground": "#eee8d5",
+    "cardBorder": "#93a1a1"
   },
-  "currentTheme": "sunset"
+  "currentTheme": "solarizedLight"
 }

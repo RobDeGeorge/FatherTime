@@ -7,10 +7,11 @@ Rectangle {
     height: 100
     color: configManager.cardBackground
     radius: 8
-    border.color: configManager.cardBorder
-    border.width: 1
+    border.color: isSelected ? accentColor : configManager.cardBorder
+    border.width: isSelected ? 2 : 1
     
     property var timerItem
+    property bool isSelected: false
     property color primaryColor: configManager.primary
     property color accentColor: configManager.accent
     property color successColor: configManager.success
@@ -24,6 +25,7 @@ Rectangle {
     signal adjustTime(int seconds)
     signal setCountdown(int seconds)
     signal toggleFavorite()
+    signal selectTimer()
     
     RowLayout {
         anchors.fill: parent
@@ -273,6 +275,15 @@ Rectangle {
                 }
                 onClicked: deleteTimer()
             }
+        }
+    }
+    
+    // Mouse area for timer selection
+    MouseArea {
+        anchors.fill: parent
+        z: -1  // Lower z-order so buttons can still be clicked
+        onClicked: {
+            selectTimer()
         }
     }
     

@@ -28,6 +28,7 @@ class TimerItem(QObject):
     typeChanged = Signal()
     elapsedSecondsChanged = Signal()
     countdownSecondsChanged = Signal()
+    initialCountdownSecondsChanged = Signal()
     isRunningChanged = Signal()
     isFavoriteChanged = Signal()
     displayTimeChanged = Signal()
@@ -42,6 +43,9 @@ class TimerItem(QObject):
         )
         self._countdown_seconds = (
             timer_data.get("countdown_seconds", 0) if timer_data else 0
+        )
+        self._initial_countdown_seconds = (
+            timer_data.get("initial_countdown_seconds", 0) if timer_data else 0
         )
         self._is_running = timer_data.get("is_running", False) if timer_data else False
         self._is_favorite = timer_data.get("is_favorite", False) if timer_data else False
@@ -92,6 +96,16 @@ class TimerItem(QObject):
             self._countdown_seconds = value
             self.countdownSecondsChanged.emit()
             self.displayTimeChanged.emit()
+
+    @Property(int, notify=initialCountdownSecondsChanged)
+    def initialCountdownSeconds(self):
+        return self._initial_countdown_seconds
+
+    @initialCountdownSeconds.setter
+    def initialCountdownSeconds(self, value):
+        if self._initial_countdown_seconds != value:
+            self._initial_countdown_seconds = value
+            self.initialCountdownSecondsChanged.emit()
 
     @Property(bool, notify=isRunningChanged)
     def isRunning(self):
@@ -493,7 +507,8 @@ class TimerManager(QObject):
             current_date = self._get_current_date_string()
             
             if timer_item.type == "countdown":
-                timer_item.countdownSeconds = 0
+                # Reset countdown to its original/initial time instead of 0
+                timer_item.countdownSeconds = timer_item.initialCountdownSeconds
             else:
                 timer_item.elapsedSeconds = 0
 
@@ -531,11 +546,13 @@ class TimerManager(QObject):
         timer_item = self._get_timer_by_id(timer_id)
         if timer_item and timer_item.type == "countdown":
             timer_item.countdownSeconds = seconds
+            timer_item.initialCountdownSeconds = seconds  # Store the initial time
             current_date = self._get_current_date_string()
             
             # Update daily state instead of global timer state
             self.db.update_daily_timer_state(timer_id, current_date, {
-                "countdown_seconds": seconds
+                "countdown_seconds": seconds,
+                "initial_countdown_seconds": seconds
             })
 
     @Slot(int)
@@ -566,6 +583,38 @@ class TimerManager(QObject):
                 
         except Exception as e:
             logger.error(f"Failed to toggle timer favorite: {e}")
+
+    @Slot(int, str)
+    def renameTimer(self, timer_id: int, new_name: str):
+        """Rename a timer with the given ID.
+        
+        Args:
+            timer_id: ID of the timer to rename
+            new_name: New name for the timer
+        """
+        # Validate inputs
+        if not isinstance(timer_id, int) or timer_id <= 0:
+            logger.error(f"Invalid timer ID: {timer_id}")
+            return
+            
+        if not isinstance(new_name, str) or not new_name.strip():
+            logger.error("New timer name must be a non-empty string")
+            return
+            
+        timer_item = self._get_timer_by_id(timer_id)
+        
+        if timer_item:
+            # Update the timer name in the database
+            current_date = self._get_current_date_string()
+            try:
+                self.db.rename_timer_on_date(current_date, timer_id, new_name.strip())
+                # Reload timers to reflect the change
+                self._load_timers()
+                logger.info(f"Timer '{timer_item.name}' renamed to '{new_name.strip()}'")
+            except Exception as e:
+                logger.error(f"Failed to rename timer: {e}")
+        else:
+            logger.error(f"Timer with ID {timer_id} not found in current timers list")
 
     @Slot(int)
     def deleteTimer(self, timer_id: int):
