@@ -886,7 +886,7 @@ class Database:
         pass
         
     def rename_timer_on_date(self, date_str: str, timer_id: int, new_name: str) -> None:
-        """Rename a timer on a specific date.
+        """Rename a timer on a specific date, and update all favorited instances across all dates.
         
         Args:
             date_str: Date string in YYYY-MM-DD format
@@ -899,6 +899,24 @@ class Database:
         # Sanitize the new name
         new_name = self._sanitize_timer_name(new_name)
         
+        # Find the timer and get its current name
+        timer_found = False
+        old_name = None
+        is_favorite = False
+        
+        if ("daily_timers" in self.daily_timers and 
+            date_str in self.daily_timers["daily_timers"]):
+            
+            for timer in self.daily_timers["daily_timers"][date_str]:
+                if timer["id"] == timer_id:
+                    old_name = timer["name"]
+                    is_favorite = timer.get("is_favorite", False)
+                    timer_found = True
+                    break
+        
+        if not timer_found or old_name is None:
+            raise ValidationError(f"Timer with ID {timer_id} not found on {date_str}")
+        
         # Check for duplicate names on this date (excluding the timer being renamed)
         if ("daily_timers" in self.daily_timers and 
             date_str in self.daily_timers["daily_timers"]):
@@ -907,30 +925,48 @@ class Database:
                 if timer["id"] != timer_id and timer["name"].lower() == new_name.lower():
                     raise ValidationError(f"A timer with name '{new_name}' already exists on {date_str}")
         
-        # Update in date-specific timers
-        timer_found = False
-        if ("daily_timers" in self.daily_timers and 
-            date_str in self.daily_timers["daily_timers"]):
+        # If this is a favorited timer, update ALL instances of this timer name across ALL dates
+        if is_favorite:
+            # Update all instances of this timer across all dates
+            for other_date, timers in self.daily_timers.get("daily_timers", {}).items():
+                for timer in timers:
+                    if timer["name"] == old_name:  # Match by old name to find all instances
+                        timer["name"] = new_name
             
+            # Also update in global timers table
+            for timer in self.data["timers"]:
+                if timer["name"] == old_name:
+                    timer["name"] = new_name
+                    
+            # Also update any active sessions with this project name
+            for session in self.sessions.get("sessions", []):
+                if session.get("project_name") == old_name and session.get("is_active", False):
+                    session["project_name"] = new_name
+                    
+            logger.info(f"Favorited timer '{old_name}' renamed to '{new_name}' across all dates and active sessions")
+        else:
+            # Not favorited - only update this specific timer on this date
             for timer in self.daily_timers["daily_timers"][date_str]:
                 if timer["id"] == timer_id:
-                    old_name = timer["name"]
                     timer["name"] = new_name
-                    timer_found = True
-                    logger.info(f"Timer {timer_id} renamed from '{old_name}' to '{new_name}' on {date_str}")
                     break
-        
-        # Update in global timers (for session compatibility)
-        for timer in self.data["timers"]:
-            if timer["id"] == timer_id:
-                timer["name"] = new_name
-                break
-        
-        if not timer_found:
-            raise ValidationError(f"Timer with ID {timer_id} not found on {date_str}")
+            
+            # Update in global timers (for session compatibility)
+            for timer in self.data["timers"]:
+                if timer["id"] == timer_id:
+                    timer["name"] = new_name
+                    break
+                    
+            # Also update any active sessions with this project name (even for non-favorited timers)
+            for session in self.sessions.get("sessions", []):
+                if session.get("project_name") == old_name and session.get("is_active", False):
+                    session["project_name"] = new_name
+                    
+            logger.info(f"Timer {timer_id} renamed from '{old_name}' to '{new_name}' on {date_str} only")
         
         self.save_daily_timers()
         self.save_data()
+        self.save_sessions()  # Save sessions in case we updated any active session names
 
     def remove_timer_from_date(self, date_str: str, timer_id: int):
         """Remove a timer from a specific date."""
