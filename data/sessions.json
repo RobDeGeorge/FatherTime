@@ -1,3 +1,114 @@
 {
-  "sessions": []
+  "sessions": [
+    {
+      "id": 1,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:22:30.780582",
+      "end_time": "2025-08-18T10:22:32.566704",
+      "duration_seconds": 1,
+      "is_active": false
+    },
+    {
+      "id": 2,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:22:33.216039",
+      "end_time": "2025-08-18T10:22:33.541291",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 3,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:22:34.144478",
+      "end_time": "2025-08-18T10:22:39.906691",
+      "duration_seconds": 5,
+      "is_active": false
+    },
+    {
+      "id": 4,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:22:50.381838",
+      "end_time": "2025-08-18T10:22:54.713384",
+      "duration_seconds": 4,
+      "is_active": false
+    },
+    {
+      "id": 5,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:22:59.064340",
+      "end_time": "2025-08-18T10:23:01.815349",
+      "duration_seconds": 2,
+      "is_active": false
+    },
+    {
+      "id": 6,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:24:11.252305",
+      "end_time": "2025-08-18T10:24:11.846359",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 7,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:25:31.012826",
+      "end_time": "2025-08-18T10:25:31.477391",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 8,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:27:00.251635",
+      "end_time": "2025-08-18T10:27:01.006617",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 9,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:27:03.096472",
+      "end_time": "2025-08-18T10:27:03.622742",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 10,
+      "timer_id": 1,
+      "project_name": "test",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:27:17.453877",
+      "end_time": "2025-08-18T10:27:17.821613",
+      "duration_seconds": 0,
+      "is_active": false
+    },
+    {
+      "id": 11,
+      "timer_id": 1,
+      "project_name": "dddd",
+      "date": "2025-08-18",
+      "start_time": "2025-08-18T10:47:01.401484",
+      "end_time": null,
+      "duration_seconds": 0,
+      "is_active": true
+    }
+  ]
 }

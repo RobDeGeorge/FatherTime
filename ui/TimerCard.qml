@@ -92,26 +92,13 @@ Rectangle {
                 }
             }
             
-            // Display time and status
-            RowLayout {
-                spacing: 10
-                
-                Text {
-                    text: timerItem ? timerItem.displayTime : "00:00:00"
-                    font.pixelSize: 24
-                    font.bold: true
-                    color: timerItem && timerItem.isRunning ? successColor : primaryColor
-                    font.family: "monospace"
-                }
-                
-                Text {
-                    text: timerItem && timerItem.isRunning ? "Running..." : "Stopped"
-                    font.pixelSize: 10
-                focus: false
-                    color: timerItem && timerItem.isRunning ? successColor : "#7f8c8d"
-                    opacity: 0.8
-                    Layout.fillWidth: true
-                }
+            // Display time
+            Text {
+                text: timerItem ? timerItem.displayTime : "00:00:00"
+                font.pixelSize: 24
+                font.bold: true
+                color: timerItem && timerItem.isRunning ? successColor : primaryColor
+                font.family: "monospace"
             }
         }
         
