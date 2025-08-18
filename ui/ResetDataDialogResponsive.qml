@@ -6,8 +6,8 @@ Dialog {
     id: root
     
     // === PROPER RESPONSIVE SIZING ===
-    width: Math.min(parent.width * 0.85, 600)
-    height: Math.min(parent.height * 0.85, 500)
+    width: Math.min(parent.width * 0.9, 550)
+    height: Math.min(parent.height * 0.9, 580)
     
     anchors.centerIn: parent
     modal: true
@@ -50,44 +50,52 @@ Dialog {
     
     // === DANGER HEADER ===
     header: Rectangle {
-        height: 70
+        height: Math.max(80, Math.min(parent.height * 0.15, 100))
         color: window.dangerColor
-        radius: 12
+        radius: Math.max(8, Math.min(root.width * 0.025, 15))
         
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 12
+            anchors.margins: Math.max(16, Math.min(root.width * 0.04, 24))
+            spacing: Math.max(8, Math.min(root.width * 0.025, 16))
             
             Rectangle {
-                width: 40
-                height: 40
+                Layout.preferredWidth: Math.max(32, Math.min(root.width * 0.08, 45))
+                Layout.preferredHeight: Layout.preferredWidth
                 color: Qt.rgba(window.backgroundColor.r, window.backgroundColor.g, window.backgroundColor.b, 0.15)
-                radius: 10
+                radius: Layout.preferredWidth * 0.25
                 
                 Text {
                     anchors.centerIn: parent
                     text: "⚠️"
-                    font.pixelSize: 22
+                    font.pixelSize: Math.max(16, Math.min(parent.width * 0.55, 26))
                 }
             }
             
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 3
+                Layout.fillHeight: true
+                spacing: Math.max(2, Math.min(root.height * 0.008, 6))
                 
                 Text {
                     text: "⚠️ DANGER: Reset All Data"
-                    font.pixelSize: 18
-                    font.bold: true
+                    font.pixelSize: Math.max(14, Math.min(root.width * 0.04, 20))
+                    font.weight: Font.Bold
                     color: window.backgroundColor
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
                 }
                 
                 Text {
                     text: "This action cannot be undone"
-                    font.pixelSize: 12
+                    font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                     color: Qt.rgba(window.backgroundColor.r, window.backgroundColor.g, window.backgroundColor.b, 0.9)
                     font.weight: Font.Medium
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    elide: Text.ElideRight
+                    maximumLineCount: 2
                 }
             }
         }
@@ -121,91 +129,86 @@ Dialog {
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
-            anchors.topMargin: 20
-            anchors.bottomMargin: 80  // Leave room for buttons
-            spacing: 16
+            anchors.leftMargin: Math.max(16, Math.min(root.width * 0.04, 24))
+            anchors.rightMargin: Math.max(16, Math.min(root.width * 0.04, 24))
+            anchors.topMargin: Math.max(16, Math.min(root.height * 0.035, 24))
+            anchors.bottomMargin: Math.max(70, Math.min(root.height * 0.15, 90))  // Leave room for buttons
+            spacing: Math.max(12, Math.min(root.height * 0.025, 20))
             
             Text {
                 text: "⚠️ DANGER: Complete Data Reset"
-                font.pixelSize: 18
-                font.bold: true
+                font.pixelSize: Math.max(14, Math.min(root.width * 0.04, 20))
+                font.weight: Font.Bold
                 color: window.dangerColor
                 Layout.fillWidth: true
+                Layout.maximumWidth: root.width - 40
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
+                maximumLineCount: 2
             }
             
             // === CONSEQUENCES SECTION ===
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 160
+                Layout.preferredHeight: Math.max(140, Math.min(root.height * 0.35, 180))
                 color: Qt.rgba(window.dangerColor.r, window.dangerColor.g, window.dangerColor.b, 0.08)
-                radius: 10
+                radius: Math.max(6, Math.min(root.width * 0.02, 12))
                 border.color: Qt.rgba(window.dangerColor.r, window.dangerColor.g, window.dangerColor.b, 0.3)
                 border.width: 1
                 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 12
+                    anchors.margins: Math.max(12, Math.min(root.width * 0.035, 20))
+                    spacing: Math.max(8, Math.min(root.height * 0.02, 14))
                     
                     Text {
                         text: "This will permanently delete:"
-                        font.pixelSize: 14
-                        font.bold: true
+                        font.pixelSize: Math.max(12, Math.min(root.width * 0.032, 16))
+                        font.weight: Font.Bold
                         color: window.textColor
                         Layout.fillWidth: true
+                        elide: Text.ElideRight
                     }
                     
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: Math.max(6, Math.min(root.height * 0.012, 10))
                         
                         Text {
                             text: "🗑️ All timer definitions and configurations"
-                            font.pixelSize: 12
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            Layout.maximumWidth: parent.width
+                            maximumLineCount: 2
                         }
                         Text {
                             text: "📊 All work sessions and time tracking history"
-                            font.pixelSize: 12
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            Layout.maximumWidth: parent.width
+                            maximumLineCount: 2
                         }
                         Text {
                             text: "📈 All daily statistics and breakdowns"
-                            font.pixelSize: 12
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
+                            Layout.maximumWidth: parent.width
+                            maximumLineCount: 2
                         }
                         Text {
                             text: "📅 All date-specific timer states"
-                            font.pixelSize: 12
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
-                        }
-                    }
-                    
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 32
-                        color: Qt.rgba(window.dangerColor.r, window.dangerColor.g, window.dangerColor.b, 0.15)
-                        radius: 6
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: "⚠️ This action cannot be undone!"
-                            font.pixelSize: 12
-                            font.bold: true
-                            color: window.dangerColor
-                            wrapMode: Text.WordWrap
+                            Layout.maximumWidth: parent.width
+                            maximumLineCount: 2
                         }
                     }
                 }
@@ -214,35 +217,37 @@ Dialog {
             // === CONFIRMATION SLIDER SECTION ===
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 120
+                Layout.preferredHeight: Math.max(100, Math.min(root.height * 0.25, 130))
                 color: Qt.rgba(window.warningColor.r, window.warningColor.g, window.warningColor.b, 0.08)
-                radius: 10
+                radius: Math.max(6, Math.min(root.width * 0.02, 12))
                 border.color: Qt.rgba(window.warningColor.r, window.warningColor.g, window.warningColor.b, 0.3)
                 border.width: 1
                 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 16
+                    anchors.margins: Math.max(12, Math.min(root.width * 0.035, 20))
+                    spacing: Math.max(12, Math.min(root.height * 0.025, 18))
                     
                     Text {
                         text: "Slide all the way to the right to confirm deletion:"
-                        font.pixelSize: 13
-                        font.bold: true
+                        font.pixelSize: Math.max(11, Math.min(root.width * 0.028, 14))
+                        font.weight: Font.Bold
                         color: window.textColor
                         Layout.fillWidth: true
+                        Layout.maximumWidth: root.width - 40
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap
+                        maximumLineCount: 2
                     }
                     
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 12
+                        spacing: Math.max(8, Math.min(root.width * 0.025, 16))
                         
                         Text {
                             text: "SAFE"
-                            font.pixelSize: 11
-                            font.bold: true
+                            font.pixelSize: Math.max(9, Math.min(root.width * 0.022, 12))
+                            font.weight: Font.Bold
                             color: window.successColor
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -250,7 +255,7 @@ Dialog {
                         Slider {
                             id: confirmSlider
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 32
+                            Layout.preferredHeight: Math.max(28, Math.min(root.height * 0.055, 36))
                             from: 0
                             to: 100
                             value: 0
@@ -280,13 +285,13 @@ Dialog {
                             handle: Rectangle {
                                 x: confirmSlider.leftPadding + confirmSlider.visualPosition * (confirmSlider.availableWidth - width)
                                 y: confirmSlider.topPadding + confirmSlider.availableHeight / 2 - height / 2
-                                implicitWidth: 32
-                                implicitHeight: 32
+                                implicitWidth: Math.max(24, Math.min(root.width * 0.06, 36))
+                                implicitHeight: implicitWidth
                                 radius: width / 2
                                 color: confirmSlider.pressed ? Qt.darker(confirmSlider.value < 95 ? window.warningColor : window.dangerColor, 1.2) : 
                                        (confirmSlider.value < 95 ? window.warningColor : window.dangerColor)
                                 border.color: "#ffffff"
-                                border.width: 2
+                                border.width: Math.max(1, Math.min(root.width * 0.005, 3))
                                 
                                 SequentialAnimation on scale {
                                     running: confirmSlider.value >= 95
@@ -303,8 +308,8 @@ Dialog {
                         
                         Text {
                             text: "DELETE"
-                            font.pixelSize: 11
-                            font.bold: true
+                            font.pixelSize: Math.max(9, Math.min(root.width * 0.022, 12))
+                            font.weight: Font.Bold
                             color: window.dangerColor
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -322,7 +327,7 @@ Dialog {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            height: 80
+            height: Math.max(70, Math.min(root.height * 0.15, 90))
             color: "transparent"
             
             Rectangle {
@@ -335,8 +340,8 @@ Dialog {
             
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 20
-                spacing: 12
+                anchors.margins: Math.max(16, Math.min(root.width * 0.04, 24))
+                spacing: Math.max(8, Math.min(root.width * 0.025, 16))
                 
                 Item {
                     Layout.fillWidth: true
@@ -344,8 +349,8 @@ Dialog {
                 
                 Button {
                     text: "Cancel"
-                    Layout.preferredWidth: 100
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: Math.max(80, Math.min(root.width * 0.2, 120))
+                    Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
                     
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -362,8 +367,9 @@ Dialog {
                         color: window.textColor
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: Math.max(11, Math.min(root.width * 0.028, 14))
                         font.weight: Font.Medium
+                        elide: Text.ElideRight
                     }
                     
                     onClicked: {
@@ -375,8 +381,8 @@ Dialog {
                 Button {
                     text: confirmSlider.value >= 95 ? "CONFIRM RESET" : "Slide to confirm →"
                     enabled: confirmSlider.value >= 95
-                    Layout.preferredWidth: 150
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: Math.max(130, Math.min(root.width * 0.3, 170))
+                    Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
                     
                     background: Rectangle {
                         color: {
@@ -404,9 +410,11 @@ Dialog {
                         color: parent.enabled ? "white" : Qt.rgba(1, 1, 1, 0.5)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: Math.max(11, Math.min(root.width * 0.028, 14))
                         font.weight: Font.Bold
                         wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
                     }
                     
                     onClicked: {
