@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Property, QObject, Signal
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from .config import DEFAULT_COLORS, DEFAULT_CONFIG_FILE
 from .exceptions import ConfigError
@@ -16,6 +16,7 @@ class ConfigManager(QObject):
     """Manages application configuration including color themes."""
 
     colorsChanged = Signal()
+    timeRoundingChanged = Signal()
 
     def __init__(
         self, config_file: Optional[str] = None, data_dir: Optional[str] = None
@@ -359,3 +360,29 @@ class ConfigManager(QObject):
         # Emit change signal if colors were updated
         if keys[0] == "colors":
             self.colorsChanged.emit()
+
+    @Property(bool, notify=timeRoundingChanged)
+    def timeRoundingEnabled(self) -> bool:
+        """Get whether time rounding is enabled."""
+        return self.get_value("timeRounding.enabled", True)
+    
+    @Property(int, notify=timeRoundingChanged)
+    def timeRoundingMinutes(self) -> int:
+        """Get time rounding interval in minutes (15=quarter hours, 30=half hours, 60=full hours)."""
+        return self.get_value("timeRounding.roundingMinutes", 15)
+    
+    @Slot(bool)
+    def setTimeRoundingEnabled(self, enabled: bool) -> None:
+        """Set whether time rounding is enabled."""
+        logger.info(f"Setting time rounding enabled: {enabled}")
+        self.set_value("timeRounding.enabled", enabled)
+        self.timeRoundingChanged.emit()
+    
+    @Slot(int)
+    def setTimeRoundingMinutes(self, minutes: int) -> None:
+        """Set time rounding interval in minutes."""
+        logger.info(f"Setting time rounding minutes: {minutes}")
+        if minutes not in [15, 30, 60]:
+            raise ConfigError(f"Invalid rounding minutes: {minutes}. Must be 15, 30, or 60")
+        self.set_value("timeRounding.roundingMinutes", minutes)
+        self.timeRoundingChanged.emit()

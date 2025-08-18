@@ -1,15 +1,19 @@
 {
   "colors": {
-    "primary": "#83a598",
-    "secondary": "#fe8019",
-    "accent": "#8ec07c",
-    "success": "#b8bb26",
-    "danger": "#fb4934",
-    "warning": "#fabd2f",
-    "background": "#282828",
-    "text": "#ebdbb2",
-    "cardBackground": "#3c3836",
-    "cardBorder": "#665c54"
+    "primary": "#61afef",
+    "secondary": "#e06c75",
+    "accent": "#56b6c2",
+    "success": "#98c379",
+    "danger": "#e06c75",
+    "warning": "#e5c07b",
+    "background": "#1e2127",
+    "text": "#abb2bf",
+    "cardBackground": "#2c323c",
+    "cardBorder": "#3e4451"
   },
-  "currentTheme": "gruvboxDark"
+  "currentTheme": "oneDark",
+  "timeRounding": {
+    "enabled": false,
+    "roundingMinutes": 60
+  }
 }

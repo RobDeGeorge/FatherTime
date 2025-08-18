@@ -65,8 +65,8 @@ def main() -> int:
         engine = QQmlApplicationEngine()
 
         try:
-            timer_manager = TimerManager()
             config_manager = ConfigManager()
+            timer_manager = TimerManager(config_manager)
             theme_manager = ThemeManager(config_manager)
             theme_manager.initialize_theme()
         except FatherTimeError as e:

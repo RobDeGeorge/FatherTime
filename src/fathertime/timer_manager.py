@@ -33,7 +33,7 @@ class TimerItem(QObject):
     isFavoriteChanged = Signal()
     displayTimeChanged = Signal()
 
-    def __init__(self, timer_data: Dict = None):
+    def __init__(self, timer_data: Dict = None, config_manager=None):
         super().__init__()
         self._id = timer_data.get("id", 0) if timer_data else 0
         self._name = timer_data.get("name", "") if timer_data else ""
@@ -50,6 +50,7 @@ class TimerItem(QObject):
         self._is_running = timer_data.get("is_running", False) if timer_data else False
         self._is_favorite = timer_data.get("is_favorite", False) if timer_data else False
         self._last_started = timer_data.get("last_started") if timer_data else None
+        self._config_manager = config_manager
 
     @Property(int, notify=idChanged)
     def id(self):
@@ -144,6 +145,27 @@ class TimerItem(QObject):
         if not self._is_running and self._type != "countdown":
             # Convert to decimal hours for timesheet entry
             decimal_hours = seconds / 3600.0
+            
+            # Apply time rounding if enabled and config manager is available
+            if self._config_manager:
+                if self._config_manager.timeRoundingEnabled:
+                    rounding_minutes = self._config_manager.timeRoundingMinutes
+                    original_hours = decimal_hours
+                    # Round to the nearest specified interval
+                    if rounding_minutes == 15:  # Quarter hours: 0.25 intervals
+                        decimal_hours = round(decimal_hours * 4) / 4
+                    elif rounding_minutes == 30:  # Half hours: 0.5 intervals
+                        decimal_hours = round(decimal_hours * 2) / 2
+                    elif rounding_minutes == 60:  # Full hours: 1.0 intervals
+                        decimal_hours = round(decimal_hours)
+                    
+                    # Debug logging
+                    from .logger import logger
+                    logger.debug(f"Rounding: {original_hours:.4f}h → {decimal_hours:.4f}h (interval: {rounding_minutes}min)")
+                else:
+                    from .logger import logger
+                    logger.debug(f"Rounding disabled: {decimal_hours:.4f}h")
+            
             if decimal_hours == 0:
                 return "0.00h"
             elif decimal_hours < 0.01:  # Less than 0.01 hours (36 seconds)
@@ -161,7 +183,7 @@ class TimerManager(QObject):
     timesheetChanged = Signal()
     dailyBreakdownChanged = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, config_manager=None) -> None:
         super().__init__()
         self.db = Database()
         self._timers = []
@@ -169,6 +191,7 @@ class TimerManager(QObject):
         self._active_sessions = {}  # timer_id -> session_id mapping
         self._current_date = date.today()
         self._daily_breakdown = []
+        self._config_manager = config_manager
 
         # Consolidated timer system - single timer with state-based logic
         self.main_timer = QTimer()
@@ -188,6 +211,10 @@ class TimerManager(QObject):
         # Emit initial signal to populate daily breakdown
         self._update_breakdown_data()
         self.timesheetChanged.emit()
+        
+        # Connect to config changes to update timer displays
+        if self._config_manager:
+            self._config_manager.timeRoundingChanged.connect(self._on_time_rounding_changed)
 
     def _format_time_literal(self, total_seconds: int) -> str:
         """Format time without approximations showing exact hours, minutes, seconds."""
@@ -208,6 +235,11 @@ class TimerManager(QObject):
             
         return " ".join(parts)
 
+    def _on_time_rounding_changed(self):
+        """Handle time rounding configuration changes by updating all timer displays."""
+        # Force update all timer displays by emitting displayTimeChanged signal
+        for timer in self._timers:
+            timer.displayTimeChanged.emit()
 
     def _load_timers(self):
         self._timers.clear()
@@ -225,7 +257,7 @@ class TimerManager(QObject):
             merged_data = data.copy()
             merged_data.update(daily_state)
             
-            timer_item = TimerItem(merged_data)
+            timer_item = TimerItem(merged_data, self._config_manager)
             self._timers.append(timer_item)
             
             # Add to running timer set if timer is currently running

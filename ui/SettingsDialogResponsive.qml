@@ -3,80 +3,50 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
 /**
- * SettingsDialogResponsive - Fully responsive settings dialog
+ * Settings Dialog - Responsive version for global app configuration
  * 
  * Features:
- * - Responsive theme grid that adapts to screen size
- * - Modern card-based layout with proper visual hierarchy
- * - Touch-friendly theme selection chips
- * - Enhanced visual feedback and animations
- * - All original theme functionality preserved
+ * - Responsive sizing based on screen dimensions  
+ * - Theme selection with live preview
+ * - Time rounding configuration
+ * - Smooth animations and modern design
  */
+
 Dialog {
     id: root
     
-    // === PROPER RESPONSIVE SIZING ===
-    width: Math.min(parent.width * 0.9, 700)
-    height: Math.min(parent.height * 0.9, 600)
+    // === RESPONSIVE SIZING ===
+    width: Math.min(parent.width * 0.9, 800)
+    height: Math.min(parent.height * 0.9, 900)
     
-    // Always center and stay within bounds
     anchors.centerIn: parent
     modal: true
     
-    
-    // === SMOOTH ANIMATIONS ===
+    // === ANIMATIONS ===
     enter: Transition {
-        ParallelAnimation {
-            NumberAnimation {
-                property: "opacity"
-                from: 0.0
-                to: 1.0
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                property: "scale"
-                from: 0.95
-                to: 1.0
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
-        }
+        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 200 }
+        NumberAnimation { property: "scale"; from: 0.9; to: 1.0; duration: 200 }
     }
     
     exit: Transition {
-        ParallelAnimation {
-            NumberAnimation {
-                property: "opacity"
-                from: 1.0
-                to: 0.0
-                duration: 200
-                easing.type: Easing.InCubic
-            }
-            NumberAnimation {
-                property: "scale"
-                from: 1.0
-                to: 0.95
-                duration: 200
-                easing.type: Easing.InCubic
-            }
-        }
+        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 150 }
+        NumberAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 150 }
     }
     
-    // === MODERN BACKGROUND STYLING ===
+    // === BACKGROUND ===
     background: Rectangle {
-        color: window.backgroundColor
-        border.color: window.primaryColor
-        border.width: 2
-        radius: Math.max(root.baseWidth * 0.015, 12)
+        color: window.cardBackgroundColor
+        border.color: window.cardBorderColor
+        border.width: 1
+        radius: 16
         
-        // Simple shadow effect
         Rectangle {
             anchors.fill: parent
-            anchors.topMargin: 3
-            anchors.leftMargin: 3
-            color: "#20000000"
-            radius: parent.radius
+            anchors.margins: -10
+            color: "transparent"
+            border.color: Qt.rgba(0, 0, 0, 0.1)
+            border.width: 1
+            radius: parent.radius + 10
             z: parent.z - 1
         }
     }
@@ -85,7 +55,7 @@ Dialog {
     header: Rectangle {
         height: 70
         color: window.primaryColor
-        radius: 12
+        radius: 16
         
         RowLayout {
             anchors.fill: parent
@@ -134,9 +104,7 @@ Dialog {
         focus: true
         
         Keys.onPressed: function(event) {
-            console.log("Key pressed in SettingsDialog:", event.key)
             if (event.key === Qt.Key_Escape || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                console.log("ESC/ENTER in SettingsDialog")
                 root.close()
                 window.restoreFocus()
                 event.accepted = true
@@ -160,7 +128,7 @@ Dialog {
             // === APPEARANCE SECTION ===
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 360
+                Layout.preferredHeight: 500
                 color: window.cardBackgroundColor
                 border.color: window.cardBorderColor
                 border.width: 1
@@ -208,7 +176,7 @@ Dialog {
                         }
                     }
                     
-                    // Theme selection section
+                    // Theme selection
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 12
@@ -220,154 +188,284 @@ Dialog {
                             color: window.textColor
                         }
                         
-                        // Responsive theme grid
-                        ScrollView {
+                        // Theme grid - adaptive columns based on screen width
+                        GridLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 240
-                            contentWidth: availableWidth
-                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                            columns: Math.max(2, Math.min(4, Math.floor(width / 160)))
+                            columnSpacing: 10
+                            rowSpacing: 10
+                                
+                            property var themeNames: [
+                                { key: "default", name: "Default" },
+                                { key: "dracula", name: "Dracula" },
+                                { key: "nightOwl", name: "Night Owl" },
+                                { key: "githubDark", name: "GitHub Dark" },
+                                { key: "catppuccin", name: "Catppuccin" },
+                                { key: "tokyoNight", name: "Tokyo Night" },
+                                { key: "gruvboxDark", name: "Gruvbox Dark" },
+                                { key: "nordDark", name: "Nord Dark" },
+                                { key: "oneDark", name: "One Dark" },
+                                { key: "solarizedLight", name: "Solarized Light" },
+                                { key: "solarizedDark", name: "Solarized Dark" },
+                                { key: "materialLight", name: "Material Light" },
+                                { key: "highContrast", name: "High Contrast" },
+                                { key: "cyberpunk", name: "Cyberpunk" },
+                                { key: "forest", name: "Forest" },
+                                { key: "ocean", name: "Ocean" },
+                                { key: "sunset", name: "Sunset" }
+                            ]
                             
-                            GridLayout {
-                                width: parent.width
-                                columns: 3 // Responsive columns
-                                columnSpacing: 10
-                                rowSpacing: 10
+                            Repeater {
+                                model: parent.themeNames
                                 
-                                property var themeNames: [
-                                    { key: "default", name: "Default" },
-                                    { key: "dracula", name: "Dracula" },
-                                    { key: "nightOwl", name: "Night Owl" },
-                                    { key: "githubDark", name: "GitHub Dark" },
-                                    { key: "catppuccin", name: "Catppuccin" },
-                                    { key: "tokyoNight", name: "Tokyo Night" },
-                                    { key: "gruvboxDark", name: "Gruvbox Dark" },
-                                    { key: "nordDark", name: "Nord Dark" },
-                                    { key: "oneDark", name: "One Dark" },
-                                    { key: "solarizedLight", name: "Solarized Light" },
-                                    { key: "solarizedDark", name: "Solarized Dark" },
-                                    { key: "materialLight", name: "Material Light" },
-                                    { key: "highContrast", name: "High Contrast" },
-                                    { key: "cyberpunk", name: "Cyberpunk" },
-                                    { key: "forest", name: "Forest" },
-                                    { key: "ocean", name: "Ocean" },
-                                    { key: "sunset", name: "Sunset" }
-                                ]
-                                
-                                Repeater {
-                                    model: parent.themeNames
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 44
+                                    Layout.minimumWidth: 120
+                                    radius: 8
                                     
-                                    Rectangle {
-                                        Layout.preferredWidth: 140
-                                        Layout.preferredHeight: 44
-                                        radius: 8
-                                        
-                                        property bool isSelected: false
-                                        property bool hovered: false
-                                        property var themeColors: themeManager.getTheme(modelData.key)
-                                        
-                                        // Update selection when theme changes
-                                        Connections {
-                                            target: themeManager
-                                            function onThemeChanged() {
-                                                isSelected = themeManager.getCurrentTheme() === modelData.key
-                                            }
-                                        }
-                                        
-                                        Component.onCompleted: {
+                                    property bool isSelected: false
+                                    property bool hovered: false
+                                    property var themeColors: themeManager.getTheme(modelData.key)
+                                    
+                                    // Update selection when theme changes
+                                    Connections {
+                                        target: themeManager
+                                        function onThemeChanged() {
                                             isSelected = themeManager.getCurrentTheme() === modelData.key
                                         }
+                                    }
+                                    
+                                    Component.onCompleted: {
+                                        isSelected = themeManager.getCurrentTheme() === modelData.key
+                                    }
+                                    
+                                    color: isSelected ? Qt.rgba(themeColors.accent.r, themeColors.accent.g, themeColors.accent.b, 0.2) : 
+                                           hovered ? Qt.rgba(themeColors.primary.r, themeColors.primary.g, themeColors.primary.b, 0.1) : 
+                                           "transparent"
+                                    
+                                    border.color: isSelected ? themeColors.accent : 
+                                                  hovered ? Qt.rgba(themeColors.primary.r, themeColors.primary.g, themeColors.primary.b, 0.3) : 
+                                                  Qt.rgba(window.cardBorderColor.r, window.cardBorderColor.g, window.cardBorderColor.b, 0.5)
+                                    border.width: isSelected ? 2 : 1
+                                    
+                                    Behavior on color {
+                                        ColorAnimation { duration: 200 }
+                                    }
+                                    
+                                    Behavior on border.color {
+                                        ColorAnimation { duration: 200 }
+                                    }
+                                    
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 8
+                                        spacing: 6
                                         
-                                        color: {
-                                            if (isSelected) return window.accentColor
-                                            if (hovered) return Qt.rgba(window.accentColor.r, window.accentColor.g, window.accentColor.b, 0.1)
-                                            return window.cardBackgroundColor
+                                        // Three color circles
+                                        Rectangle {
+                                            width: 16
+                                            height: 16
+                                            radius: 8
+                                            color: themeColors.background
                                         }
                                         
-                                        border.color: {
-                                            if (isSelected) return window.accentColor
-                                            if (hovered) return Qt.rgba(window.accentColor.r, window.accentColor.g, window.accentColor.b, 0.4)
-                                            return window.cardBorderColor
-                                        }
-                                        border.width: isSelected ? 2 : 1
-                                        
-                                        // Smooth transitions
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                        Behavior on border.color { ColorAnimation { duration: 200 } }
-                                        Behavior on scale { NumberAnimation { duration: 150 } }
-                                        
-                                        scale: hovered ? 1.02 : 1.0
-                                        
-                                        RowLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: Math.max(parent.width * 0.08, 12)
-                                            spacing: Math.max(parent.width * 0.06, 8)
-                                            
-                                            // Color preview dots
-                                            Row {
-                                                spacing: 3
-                                                
-                                                Rectangle {
-                                                    width: 12
-                                                    height: width
-                                                    radius: width / 2
-                                                    color: parent.parent.parent.themeColors.background || "#ecf0f1"
-                                                    border.color: Qt.darker(color, 1.3)
-                                                    border.width: 1
-                                                }
-                                                
-                                                Rectangle {
-                                                    width: 12
-                                                    height: width
-                                                    radius: width / 2
-                                                    color: parent.parent.parent.themeColors.primary || "#3498db"
-                                                    border.color: Qt.darker(color, 1.3)
-                                                    border.width: 1
-                                                }
-                                                
-                                                Rectangle {
-                                                    width: 12
-                                                    height: width
-                                                    radius: width / 2
-                                                    color: parent.parent.parent.themeColors.accent || "#2ecc71"
-                                                    border.color: Qt.darker(color, 1.3)
-                                                    border.width: 1
-                                                }
-                                            }
-                                            
-                                            // Theme name
-                                            Text {
-                                                text: modelData.name
-                                                font.pixelSize: 12
-                                                font.weight: parent.parent.isSelected ? Font.Medium : Font.Normal
-                                                color: parent.parent.isSelected ? "white" : window.textColor
-                                                Layout.fillWidth: true
-                                                elide: Text.ElideRight
-                                            }
-                                            
-                                            // Selection indicator
-                                            Text {
-                                                text: parent.parent.isSelected ? "✓" : ""
-                                                font.pixelSize: Math.max(root.baseWidth * 0.02, 14)
-                                                font.bold: true
-                                                color: "white"
-                                                visible: parent.parent.isSelected
-                                            }
+                                        Rectangle {
+                                            width: 16
+                                            height: 16
+                                            radius: 8
+                                            color: themeColors.primary
                                         }
                                         
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            onEntered: parent.hovered = true
-                                            onExited: parent.hovered = false
-                                            onClicked: {
-                                                themeManager.setTheme(modelData.key)
-                                            }
-                                            cursorShape: Qt.PointingHandCursor
+                                        Rectangle {
+                                            width: 16
+                                            height: 16
+                                            radius: 8
+                                            color: themeColors.accent
                                         }
+                                        
+                                        Text {
+                                            text: modelData.name
+                                            font.pixelSize: 11
+                                            font.weight: isSelected ? Font.Bold : Font.Normal
+                                            color: window.textColor
+                                            Layout.fillWidth: true
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                    
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onEntered: parent.hovered = true
+                                        onExited: parent.hovered = false
+                                        onClicked: {
+                                            themeManager.setTheme(modelData.key)
+                                        }
+                                        cursorShape: Qt.PointingHandCursor
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            
+            // === TIME ROUNDING SECTION ===
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 200
+                color: window.cardBackgroundColor
+                border.color: window.cardBorderColor
+                border.width: 1
+                radius: 12
+                
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 25
+                    spacing: 18
+                    
+                    // Section header
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        
+                        Rectangle {
+                            width: 32
+                            height: 32
+                            color: Qt.rgba(window.primaryColor.r, window.primaryColor.g, window.primaryColor.b, 0.15)
+                            radius: Math.max(width * 0.25, 8)
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "⏱️"
+                                font.pixelSize: Math.max(parent.width * 0.5, 14)
+                            }
+                        }
+                        
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            
+                            Text {
+                                text: "Time Rounding"
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: window.textColor
+                            }
+                            
+                            Text {
+                                text: "Configure how stopwatch times are rounded when stopped"
+                                font.pixelSize: 11
+                                color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
+                            }
+                        }
+                    }
+                    
+                    // Time rounding options
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        
+                        // Enable/disable toggle
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            
+                            Text {
+                                text: "Enable Rounding:"
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                color: window.textColor
+                                Layout.preferredWidth: 120
+                            }
+                            
+                            Switch {
+                                id: roundingEnabledSwitch
+                                checked: configManager.timeRoundingEnabled
+                                onToggled: {
+                                    configManager.setTimeRoundingEnabled(checked)
+                                }
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                        }
+                        
+                        // Rounding interval selection
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            enabled: roundingEnabledSwitch.checked
+                            opacity: enabled ? 1.0 : 0.5
+                            
+                            Text {
+                                text: "Round to:"
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                color: window.textColor
+                                Layout.preferredWidth: 120
+                            }
+                            
+                            ComboBox {
+                                id: roundingComboBox
+                                Layout.preferredWidth: 150
+                                Layout.preferredHeight: 36
+                                
+                                property var roundingOptions: [
+                                    { value: 15, text: "Quarter hours (15 min)" },
+                                    { value: 30, text: "Half hours (30 min)" },
+                                    { value: 60, text: "Full hours (60 min)" }
+                                ]
+                                
+                                model: roundingOptions.map(option => option.text)
+                                
+                                Component.onCompleted: {
+                                    let currentValue = configManager.timeRoundingMinutes
+                                    for (let i = 0; i < roundingOptions.length; i++) {
+                                        if (roundingOptions[i].value === currentValue) {
+                                            currentIndex = i
+                                            break
+                                        }
+                                    }
+                                }
+                                
+                                onActivated: function(index) {
+                                    let selectedValue = roundingOptions[index].value
+                                    configManager.setTimeRoundingMinutes(selectedValue)
+                                }
+                                
+                                background: Rectangle {
+                                    color: window.cardBackgroundColor
+                                    border.color: parent.activeFocus ? window.accentColor : window.cardBorderColor
+                                    border.width: parent.activeFocus ? 2 : 1
+                                    radius: 6
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.displayText
+                                    color: window.textColor
+                                    font.pixelSize: 12
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 10
+                                }
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                        }
+                        
+                        // Example text
+                        Text {
+                            text: {
+                                if (!roundingEnabledSwitch.checked) return "Example: 1.74h → 1.74h (no rounding)"
+                                let minutes = configManager.timeRoundingMinutes
+                                if (minutes === 15) return "Example: 1.74h → 1.75h (rounded to quarter hours)"
+                                if (minutes === 30) return "Example: 1.74h → 2.00h (rounded to half hours)"
+                                if (minutes === 60) return "Example: 1.74h → 2.00h (rounded to full hours)"
+                                return "Example: 1.74h → 1.75h (rounded)"
+                            }
+                            font.pixelSize: 10
+                            color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.6)
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }
@@ -451,8 +549,6 @@ Dialog {
             }
         }
     }
-    
-    // === EVENT HANDLERS ===
     
     onOpened: {
         forceActiveFocus()
