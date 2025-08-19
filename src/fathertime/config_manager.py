@@ -17,6 +17,7 @@ class ConfigManager(QObject):
 
     colorsChanged = Signal()
     timeRoundingChanged = Signal()
+    calendarViewChanged = Signal()
 
     def __init__(
         self, config_file: Optional[str] = None, data_dir: Optional[str] = None
@@ -39,12 +40,14 @@ class ConfigManager(QObject):
         try:
             self._config_data = self._load_config()
             self._colors = self._config_data.get("colors", DEFAULT_COLORS.copy())
+            self._calendar_view = self._config_data.get("calendar_view", "month")
             logger.info(f"Config loaded from {self.config_file}")
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-            self._config_data = {"colors": DEFAULT_COLORS.copy()}
+            self._config_data = {"colors": DEFAULT_COLORS.copy(), "calendar_view": "month"}
             self._colors = DEFAULT_COLORS.copy()
-            logger.info("Using default colors")
+            self._calendar_view = "month"
+            logger.info("Using default colors and calendar view")
 
     def _validate_and_resolve_path(self, data_dir: Optional[str]) -> Path:
         """Validate and resolve data directory path securely.
@@ -386,3 +389,27 @@ class ConfigManager(QObject):
             raise ConfigError(f"Invalid rounding minutes: {minutes}. Must be 15, 30, or 60")
         self.set_value("timeRounding.roundingMinutes", minutes)
         self.timeRoundingChanged.emit()
+
+    @Property(str, notify=calendarViewChanged)
+    def calendarView(self) -> str:
+        """Get current calendar view mode (month or week)."""
+        return self._calendar_view
+    
+    @Slot(str)
+    def setCalendarView(self, view: str) -> None:
+        """Set calendar view mode."""
+        if view not in ["month", "week"]:
+            raise ConfigError(f"Invalid calendar view: {view}. Must be 'month' or 'week'")
+        
+        logger.info(f"Setting calendar view: {view}")
+        self._calendar_view = view
+        self._config_data["calendar_view"] = view
+        self._save_config(self._config_data)
+        self.calendarViewChanged.emit()
+    
+    @Slot()
+    def toggleCalendarView(self) -> None:
+        """Toggle between month and week calendar view."""
+        new_view = "week" if self._calendar_view == "month" else "month"
+        self.setCalendarView(new_view)
+        logger.info(f"Toggled calendar view to: {new_view}")

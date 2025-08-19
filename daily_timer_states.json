@@ -1,27 +1,3 @@
 {
-  "daily_states": {
-    "2025-08-18": {
-      "1": {
-        "elapsed_seconds": 11,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": "2025-08-18T18:18:21.715540"
-      },
-      "2": {
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 4,
-        "is_running": false,
-        "last_started": "2025-08-18T19:19:36.368422"
-      },
-      "3": {
-        "elapsed_seconds": 4,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": "2025-08-18T19:21:29.527983"
-      }
-    }
-  }
+  "daily_states": {}
 }

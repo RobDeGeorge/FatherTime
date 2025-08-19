@@ -1,19 +1,20 @@
 {
   "colors": {
-    "primary": "#bd93f9",
-    "secondary": "#6272a4",
-    "accent": "#8be9fd",
-    "success": "#50fa7b",
-    "danger": "#ff5555",
-    "warning": "#f1fa8c",
-    "background": "#282a36",
-    "text": "#f8f8f2",
-    "cardBackground": "#44475a",
-    "cardBorder": "#6272a4"
+    "primary": "#2d5016",
+    "secondary": "#4a7c59",
+    "accent": "#7ec699",
+    "success": "#90d4a0",
+    "danger": "#d97a7a",
+    "warning": "#d4b85a",
+    "background": "#1a2319",
+    "text": "#e8f2e8",
+    "cardBackground": "#2d3b2c",
+    "cardBorder": "#4a7c59"
   },
-  "currentTheme": "dracula",
+  "currentTheme": "forest",
   "timeRounding": {
     "enabled": false,
     "roundingMinutes": 60
-  }
+  },
+  "calendar_view": "week"
 }

@@ -54,6 +54,15 @@ ApplicationWindow {
         }
     }
     
+    // Calendar view toggle shortcut
+    Shortcut {
+        sequence: "Ctrl+Alt+Shift+C"
+        onActivated: {
+            configManager.toggleCalendarView()
+            console.log("Toggled calendar view to:", configManager.calendarView)
+        }
+    }
+    
     // Global dialog keyboard shortcuts
     Shortcut {
         sequence: "Escape"
@@ -217,6 +226,7 @@ ApplicationWindow {
         }
         
         var cols = 7
+        var maxRows = configManager.calendarView === "month" ? 6 : 1
         var currentRow = Math.floor(selectedCellIndex / cols)
         var currentCol = selectedCellIndex % cols
         var newRow = currentRow
@@ -224,16 +234,34 @@ ApplicationWindow {
         
         switch (direction) {
             case "up":
-                newRow = (currentRow - 1 + 6) % 6
+                if (configManager.calendarView === "week") {
+                    // In week view, up/down should change weeks
+                    changeWeek(-1)
+                    return
+                } else {
+                    newRow = (currentRow - 1 + maxRows) % maxRows
+                }
                 break
             case "down":
-                newRow = (currentRow + 1) % 6
+                if (configManager.calendarView === "week") {
+                    // In week view, up/down should change weeks
+                    changeWeek(1)
+                    return
+                } else {
+                    newRow = (currentRow + 1) % maxRows
+                }
                 break
             case "left":
                 newCol = (currentCol - 1 + cols) % cols
+                if (configManager.calendarView === "week") {
+                    newRow = 0  // Always stay in row 0 for week view
+                }
                 break
             case "right":
                 newCol = (currentCol + 1) % cols
+                if (configManager.calendarView === "week") {
+                    newRow = 0  // Always stay in row 0 for week view
+                }
                 break
         }
         
@@ -244,14 +272,34 @@ ApplicationWindow {
     
     function initializeSelection() {
         let today = new Date()
-        let firstDay = new Date(currentYear, currentMonth, 1) 
-        let startDay = firstDay.getDay()
         
-        if (today.getMonth() === currentMonth && today.getFullYear() === currentYear) {
-            selectedCellIndex = startDay + today.getDate() - 1
+        if (configManager.calendarView === "week") {
+            // In week view, select today's day of week (0-6)
+            selectedCellIndex = today.getDay()
         } else {
-            selectedCellIndex = startDay
+            // Month view logic
+            let firstDay = new Date(currentYear, currentMonth, 1) 
+            let startDay = firstDay.getDay()
+            
+            if (today.getMonth() === currentMonth && today.getFullYear() === currentYear) {
+                selectedCellIndex = startDay + today.getDate() - 1
+            } else {
+                selectedCellIndex = startDay
+            }
         }
+        updateSelectedDateFromIndex()
+    }
+    
+    function changeWeek(direction) {
+        // Move currentDate by one week
+        let newDate = new Date(currentDate)
+        newDate.setDate(currentDate.getDate() + (direction * 7))
+        
+        currentDate = newDate
+        currentMonth = newDate.getMonth()
+        currentYear = newDate.getFullYear()
+        
+        // Keep the same day of the week selected
         updateSelectedDateFromIndex()
     }
     
@@ -267,10 +315,22 @@ ApplicationWindow {
     }
     
     function getCellDateFromIndex(index) {
-        let firstDay = new Date(currentYear, currentMonth, 1)
-        let startDay = firstDay.getDay()
-        let dayOffset = index - startDay
-        return new Date(currentYear, currentMonth, 1 + dayOffset)
+        if (configManager.calendarView === "week") {
+            // For week view, calculate based on current week
+            let today = new Date(currentYear, currentMonth, Math.max(1, currentDate.getDate()))
+            let currentDay = today.getDay() // 0 = Sunday
+            let weekStart = new Date(today)
+            weekStart.setDate(today.getDate() - currentDay)
+            let resultDate = new Date(weekStart)
+            resultDate.setDate(weekStart.getDate() + index)
+            return resultDate
+        } else {
+            // Month view logic
+            let firstDay = new Date(currentYear, currentMonth, 1)
+            let startDay = firstDay.getDay()
+            let dayOffset = index - startDay
+            return new Date(currentYear, currentMonth, 1 + dayOffset)
+        }
     }
     
     function navigateToToday() {
@@ -867,6 +927,26 @@ ApplicationWindow {
                                         restoreFocus()
                                     }
                                 }
+                                
+                                Button {
+                                    text: configManager.calendarView === "month" ? "Week" : "Month"
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: parent.pressed ? Qt.darker(warningColor) : warningColor
+                                        radius: 4
+                                    }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: "white"
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        font.pixelSize: parent.font.pixelSize
+                                    }
+                                    onClicked: {
+                                        configManager.toggleCalendarView()
+                                        restoreFocus()
+                                    }
+                                }
                             }
                         }
                         
@@ -883,7 +963,7 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 anchors.margins: 8
                                 columns: 7
-                                rows: 7
+                                rows: configManager.calendarView === "month" ? 7 : 2
                                 columnSpacing: 1
                                 rowSpacing: 1
                                 
@@ -907,21 +987,38 @@ ApplicationWindow {
                                 
                                 // Calendar days
                                 Repeater {
-                                    model: 42 // 6 weeks * 7 days
+                                    model: configManager.calendarView === "month" ? 42 : 7 // 6 weeks * 7 days for month, 1 week for week view
                                     
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
                                         
                                         property date cellDate: {
-                                            let firstDay = new Date(currentYear, currentMonth, 1)
-                                            let startDay = firstDay.getDay()
-                                            let dayOffset = index - startDay
-                                            return new Date(currentYear, currentMonth, 1 + dayOffset)
+                                            if (configManager.calendarView === "week") {
+                                                // For week view, show current week starting from Sunday
+                                                let today = new Date(currentYear, currentMonth, Math.max(1, currentDate.getDate()))
+                                                let currentDay = today.getDay() // 0 = Sunday
+                                                let weekStart = new Date(today)
+                                                weekStart.setDate(today.getDate() - currentDay)
+                                                let resultDate = new Date(weekStart)
+                                                resultDate.setDate(weekStart.getDate() + index)
+                                                return resultDate
+                                            } else {
+                                                // Month view logic
+                                                let firstDay = new Date(currentYear, currentMonth, 1)
+                                                let startDay = firstDay.getDay()
+                                                let dayOffset = index - startDay
+                                                return new Date(currentYear, currentMonth, 1 + dayOffset)
+                                            }
                                         }
                                         
                                         property bool isCurrentMonth: {
-                                            return cellDate.getMonth() === currentMonth && cellDate.getFullYear() === currentYear
+                                            if (configManager.calendarView === "week") {
+                                                // In week view, all days are considered "current"
+                                                return true
+                                            } else {
+                                                return cellDate.getMonth() === currentMonth && cellDate.getFullYear() === currentYear
+                                            }
                                         }
                                         
                                         property bool isToday: {
@@ -971,7 +1068,7 @@ ApplicationWindow {
                                             
                                             Text {
                                                 text: cellDate.getDate()
-                                                font.pixelSize: 10
+                                                font.pixelSize: 20
                                                 font.bold: isToday || isSelected
                                                 color: {
                                                     if (isToday) return backgroundColor
