@@ -124,9 +124,9 @@ Rectangle {
         // Right Section: All control buttons (leaving space under delete button)
         RowLayout {
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            Layout.topMargin: 12  // Leave space under delete button
+            Layout.topMargin: 10  // Leave space under delete button
             Layout.rightMargin: 38  // Add space from right edge
-            spacing: 14
+            spacing: 28
             
             // Start/Stop and Reset buttons
             RowLayout {
@@ -138,7 +138,7 @@ Rectangle {
                     Layout.preferredWidth: 80
                     Layout.preferredHeight: 48
                     text: timerItem && timerItem.isRunning ? "Stop" : "Start"
-                    font.pixelSize: 14
+                    font.pixelSize: 18
                     focus: false
                     background: Rectangle {
                         color: {
@@ -170,7 +170,7 @@ Rectangle {
                     Layout.preferredWidth: 80
                     Layout.preferredHeight: 48
                     text: "Reset"
-                    font.pixelSize: 14
+                    font.pixelSize: 18
                     focus: false
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(warningColor) : warningColor
@@ -196,14 +196,14 @@ Rectangle {
                 // Time increment toggle (above +/- buttons)
                 Button {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 60
-                    Layout.preferredHeight: 30
+                    Layout.preferredWidth: 63
+                    Layout.preferredHeight: 40
                     property var increments: [60, 300, 1800, 3600] // 1m, 5m, 30m, 1h
                     property var incrementLabels: ["1m", "5m", "30m", "1h"]
                     property int currentIndex: 0
                     
                     text: incrementLabels[currentIndex]
-                    font.pixelSize: 11
+                    font.pixelSize: 14
                     focus: false
                     
                     background: Rectangle {
@@ -232,12 +232,12 @@ Rectangle {
                 // Plus/minus buttons
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    spacing: 1
+                    spacing: 3
                     
                     // Minus Button
                     Button {
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
+                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30
                         text: "−"
                         font.pixelSize: 18
                         focus: false
@@ -265,8 +265,8 @@ Rectangle {
                     
                     // Plus Button
                     Button {
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
+                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30
                         text: "+"
                         font.pixelSize: 18
                         focus: false
