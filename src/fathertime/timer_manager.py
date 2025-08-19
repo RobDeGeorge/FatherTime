@@ -249,6 +249,11 @@ class TimerManager(QObject):
         # Get date-specific timers (with smart propagation)
         timer_data = self.db.get_timers_for_date(current_date)
         
+        # Get the display order for this date
+        display_order = self.db.get_timer_order(current_date)
+        
+        # Create timer items
+        timer_items = {}
         for data in timer_data:
             # Get the daily state for this timer on the current date (includes running state)
             daily_state = self.db.get_daily_timer_state(data["id"], current_date)
@@ -258,13 +263,65 @@ class TimerManager(QObject):
             merged_data.update(daily_state)
             
             timer_item = TimerItem(merged_data, self._config_manager)
-            self._timers.append(timer_item)
+            timer_items[data["id"]] = timer_item
             
             # Add to running timer set if timer is currently running
             if merged_data.get("is_running", False):
                 self._running_timer_ids.add(data["id"])
+        
+        # Always ensure favorites are at the top, regardless of existing order
+        if display_order:
+            # Separate timers into favorites and non-favorites based on the order
+            ordered_favorites = []
+            ordered_regular = []
+            
+            for timer_id in display_order:
+                if timer_id in timer_items:
+                    timer_item = timer_items[timer_id]
+                    if timer_item.isFavorite:
+                        ordered_favorites.append(timer_item)
+                    else:
+                        ordered_regular.append(timer_item)
+                    del timer_items[timer_id]
+            
+            # Add favorites first, then regular timers
+            self._timers.extend(ordered_favorites)
+            self._timers.extend(ordered_regular)
+        
+        # Add any remaining timers that weren't in the display order
+        # Sort with favorites first, then by creation order
+        remaining_timers = list(timer_items.values())
+        if remaining_timers:
+            # Sort: favorites first (False sorts before True, so use 'not isFavorite'), then by timer ID
+            remaining_timers.sort(key=lambda t: (not t.isFavorite, t.id))
+            
+            # Insert remaining favorites at the beginning, regular timers at the end
+            remaining_favorites = [t for t in remaining_timers if t.isFavorite]
+            remaining_regular = [t for t in remaining_timers if not t.isFavorite]
+            
+            # Insert favorites at the beginning
+            for i, fav_timer in enumerate(remaining_favorites):
+                self._timers.insert(i, fav_timer)
+            
+            # Append regular timers at the end
+            self._timers.extend(remaining_regular)
+        
+        # Update the display order to match the corrected favorites-first arrangement
+        self._update_display_order_for_current_layout()
                 
         self.timersChanged.emit()
+    
+    def _update_display_order_for_current_layout(self):
+        """Update the display order to match the current timer layout (favorites first)."""
+        current_date = self._get_current_date_string()
+        
+        # Create the corrected order based on current timer layout
+        corrected_order = [timer.id for timer in self._timers]
+        
+        # Only update if the order has actually changed
+        existing_order = self.db.get_timer_order(current_date)
+        if corrected_order != existing_order:
+            self.db.update_timer_order(current_date, corrected_order)
         
     def _get_current_date_string(self):
         """Get current date as string, but use selectedDateForTimers from UI if available"""
@@ -435,7 +492,7 @@ class TimerManager(QObject):
 
         return breakdown_data
 
-    @Slot(str, str)
+    @Slot(str, str, result=int)
     def addTimer(self, name: str, timer_type: str = "stopwatch"):
         """Add a new timer with validation.
         
@@ -446,23 +503,26 @@ class TimerManager(QObject):
         # Validate inputs
         if not isinstance(name, str):
             logger.error("Timer name must be a string")
-            return
+            return -1
             
         if not isinstance(timer_type, str):
             logger.error("Timer type must be a string")
-            return
+            return -1
             
         if timer_type not in ("stopwatch", "countdown"):
             logger.error(f"Invalid timer type: {timer_type}")
-            return
+            return -1
         
         try:
             current_date = self._get_current_date_string()
             timer_id = self.db.add_timer_to_date(current_date, name, timer_type)
-            # Reload timers to reflect the new timer and any propagation
+            # Reload timers to reflect the new timer
             self._load_timers()
+            return timer_id
         except Exception as e:
             logger.error(f"Failed to add timer: {e}")
+            return -1
+    
 
     @Slot(int)
     def startTimer(self, timer_id: int):
@@ -602,19 +662,52 @@ class TimerManager(QObject):
         current_date = self._get_current_date_string()
         
         try:
+            # Get current status before toggling
+            timer_item = self._get_timer_by_id(timer_id)
+            was_favorite = timer_item.isFavorite if timer_item else False
+            
             # Toggle in database
             new_status = self.db.toggle_timer_favorite(current_date, timer_id)
             
             # Update the local timer object
-            timer_item = self._get_timer_by_id(timer_id)
             if timer_item:
                 timer_item.isFavorite = new_status
             
-            # Reload timers to reflect any propagation or cleanup changes
-            self._load_timers()
+            # If timer was just favorited, move it to the top
+            if new_status and not was_favorite:
+                self._move_favorited_timer_to_top(timer_id)
+            else:
+                # Just reload timers for other cases (unfavoriting or reload)
+                self._load_timers()
                 
         except Exception as e:
             logger.error(f"Failed to toggle timer favorite: {e}")
+    
+    def _move_favorited_timer_to_top(self, timer_id: int):
+        """Move a newly favorited timer to the top of the list.
+        
+        Args:
+            timer_id: ID of the timer that was just favorited
+        """
+        current_date = self._get_current_date_string()
+        current_order = self.db.get_timer_order(current_date)
+        
+        # Create new order with favorited timer at top
+        new_order = []
+        
+        # Add the favorited timer first
+        new_order.append(timer_id)
+        
+        # Add all other timers except the one we just favorited
+        for existing_id in current_order:
+            if existing_id != timer_id:
+                new_order.append(existing_id)
+        
+        # Update the order in database
+        self.db.update_timer_order(current_date, new_order)
+        
+        # Reload timers to reflect the new order
+        self._load_timers()
 
     @Slot(int, str)
     def renameTimer(self, timer_id: int, new_name: str):
@@ -655,6 +748,31 @@ class TimerManager(QObject):
         self.db.remove_timer_from_date(current_date, timer_id)
         # Reload timers to reflect the change
         self._load_timers()
+
+    @Slot(int, int)
+    def reorderTimer(self, fromIndex: int, toIndex: int):
+        """Reorder a timer from one position to another.
+        
+        Args:
+            fromIndex: Current index of the timer
+            toIndex: Target index for the timer
+        """
+        if (fromIndex < 0 or fromIndex >= len(self._timers) or 
+            toIndex < 0 or toIndex >= len(self._timers) or 
+            fromIndex == toIndex):
+            return
+            
+        # Move the timer in the local list
+        timer = self._timers.pop(fromIndex)
+        self._timers.insert(toIndex, timer)
+        
+        # Update the display order in the database
+        current_date = self._get_current_date_string()
+        timer_ids = [t.id for t in self._timers]
+        self.db.update_timer_order(current_date, timer_ids)
+        
+        # Emit signal to update the UI
+        self.timersChanged.emit()
 
     @Slot()
     def resetAllData(self):

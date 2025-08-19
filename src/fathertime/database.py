@@ -38,6 +38,7 @@ class Database:
         self.sessions_file = self.data_dir / DEFAULT_SESSIONS_FILE
         self.daily_states_file = self.data_dir / "daily_timer_states.json"
         self.daily_timers_file = self.data_dir / "daily_timers.json"
+        self.timer_order_file = self.data_dir / "timer_order.json"
         self.archive_dir = self.data_dir / ARCHIVE_DIRECTORY
 
         try:
@@ -45,6 +46,7 @@ class Database:
             self.sessions = self._load_sessions()
             self.daily_states = self._load_daily_states()
             self.daily_timers = self._load_daily_timers()
+            self.timer_order = self._load_timer_order()
             self._check_and_archive_old_data()
             logger.info(
                 f"Database initialized with {len(self.data.get('timers', []))} timers"
@@ -58,7 +60,8 @@ class Database:
             'data': False,
             'sessions': False, 
             'daily_states': False,
-            'daily_timers': False
+            'daily_timers': False,
+            'timer_order': False
         }
         
         # Set up batch save timer if Qt is available
@@ -211,6 +214,11 @@ class Database:
                 self._pending_saves['daily_timers'] = False
                 saved_files.append('daily_timers')
                 
+            if self._pending_saves['timer_order']:
+                self._save_data_to_file(self.timer_order, self.timer_order_file)
+                self._pending_saves['timer_order'] = False
+                saved_files.append('timer_order')
+                
             if saved_files:
                 logger.debug(f"Batch saved: {', '.join(saved_files)}")
                 
@@ -221,7 +229,7 @@ class Database:
         """Mark a data type for batch saving.
         
         Args:
-            data_type: Type of data to save ('data', 'sessions', 'daily_states', 'daily_timers')
+            data_type: Type of data to save ('data', 'sessions', 'daily_states', 'daily_timers', 'timer_order')
         """
         if data_type in self._pending_saves:
             self._pending_saves[data_type] = True
@@ -542,6 +550,97 @@ class Database:
             logger.debug(f"Saved daily timers data to {self.daily_timers_file}")
         else:
             self._mark_for_save('daily_timers')
+    
+    def _load_timer_order(self) -> Dict[str, Any]:
+        """Load timer order data from JSON file.
+        
+        Returns:
+            Dictionary with timer order per date
+            
+        Raises:
+            DatabaseError: If file cannot be loaded or is corrupted
+        """
+        default_data = {"timer_order": {}}
+        
+        if not self.timer_order_file.exists():
+            logger.info(f"Timer order file {self.timer_order_file} not found, creating default")
+            self._save_data_to_file(default_data, self.timer_order_file)
+            return default_data
+            
+        try:
+            with open(self.timer_order_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                self._validate_timer_order_data(data)
+                return data
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in timer order file: {e}")
+            raise DatabaseError(f"Corrupt timer order file: {e}") from e
+        except IOError as e:
+            logger.error(f"Cannot read timer order file: {e}")
+            raise DatabaseError(f"Cannot read timer order file: {e}") from e
+    
+    def _validate_timer_order_data(self, data: Dict[str, Any]) -> None:
+        """Validate timer order data structure.
+        
+        Args:
+            data: Timer order data to validate
+            
+        Raises:
+            ValidationError: If data structure is invalid
+        """
+        if not isinstance(data, dict):
+            raise ValidationError("Timer order data must be a dictionary")
+        if "timer_order" not in data or not isinstance(data["timer_order"], dict):
+            raise ValidationError("Timer order data must contain 'timer_order' dictionary")
+    
+    def save_timer_order(self, immediate: bool = False) -> None:
+        """Save timer order to JSON file.
+
+        Args:
+            immediate: If True, save immediately; otherwise mark for batch save
+            
+        Raises:
+            DatabaseError: If file cannot be saved
+        """
+        if immediate or not self._batch_save_timer:
+            self._save_data_to_file(self.timer_order, self.timer_order_file)
+            logger.debug(f"Saved timer order data to {self.timer_order_file}")
+        else:
+            self._mark_for_save('timer_order')
+    
+    def get_timer_order(self, date_str: str) -> List[int]:
+        """Get timer display order for a specific date.
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format
+            
+        Returns:
+            List of timer IDs in display order
+        """
+        return self.timer_order.get("timer_order", {}).get(date_str, [])
+    
+    def update_timer_order(self, date_str: str, timer_ids: List[int]) -> None:
+        """Update timer display order for a specific date.
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format
+            timer_ids: List of timer IDs in the desired display order
+            
+        Raises:
+            ValidationError: If inputs are invalid
+        """
+        if not isinstance(date_str, str) or not date_str:
+            raise ValidationError("Date string must be a non-empty string")
+        if not isinstance(timer_ids, list):
+            raise ValidationError("Timer IDs must be a list")
+        if not all(isinstance(tid, int) for tid in timer_ids):
+            raise ValidationError("All timer IDs must be integers")
+            
+        if "timer_order" not in self.timer_order:
+            self.timer_order["timer_order"] = {}
+            
+        self.timer_order["timer_order"][date_str] = timer_ids
+        self.save_timer_order()
 
     def get_all_timers(self) -> List[Dict]:
         return self.data.get("timers", [])
@@ -866,6 +965,44 @@ class Database:
         self.daily_timers["daily_timers"][date_str].append(timer_data.copy())
         self.save_daily_timers()
         
+        # Add to timer order for this date (after favorites, before regular timers)
+        current_order = self.get_timer_order(date_str)
+        
+        if not current_order:
+            # No existing order, just append
+            current_order.append(timer_id)
+        else:
+            # Find the correct position: after all favorites but before regular timers
+            insert_position = len(current_order)  # Default to end
+            
+            # Find where favorites end and regular timers begin
+            for i, existing_timer_id in enumerate(current_order):
+                # Get the existing timer to check if it's favorited
+                existing_timer = None
+                
+                # Check in daily_timers for this date
+                for timer in self.daily_timers.get("daily_timers", {}).get(date_str, []):
+                    if timer["id"] == existing_timer_id:
+                        existing_timer = timer
+                        break
+                
+                # If not found in daily timers, check global timers
+                if not existing_timer:
+                    for timer in self.data.get("timers", []):
+                        if timer["id"] == existing_timer_id:
+                            existing_timer = timer
+                            break
+                
+                # If we found a non-favorite timer, insert before it
+                if existing_timer and not existing_timer.get("is_favorite", False):
+                    insert_position = i
+                    break
+            
+            # Insert the new timer at the correct position
+            current_order.insert(insert_position, timer_id)
+        
+        self.update_timer_order(date_str, current_order)
+        
         # DO NOT propagate - each date should be independent
         
         return timer_id
@@ -978,6 +1115,12 @@ class Database:
                 if t["id"] != timer_id
             ]
             self.save_daily_timers()
+            
+            # Remove from timer order for this date
+            current_order = self.get_timer_order(date_str)
+            if timer_id in current_order:
+                current_order.remove(timer_id)
+                self.update_timer_order(date_str, current_order)
 
     def toggle_timer_favorite(self, date_str: str, timer_id: int) -> bool:
         """Toggle the favorite status of a timer with smart unfavorite logic.

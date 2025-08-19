@@ -265,9 +265,10 @@ Rectangle {
         }
     }
     
-    // Mouse area for timer selection
+    // Mouse area for timer selection (avoiding the drag handle area)
     MouseArea {
         anchors.fill: parent
+        anchors.leftMargin: 20  // Avoid the drag handle area
         z: -1  // Lower z-order so buttons can still be clicked
         onClicked: {
             selectTimer()

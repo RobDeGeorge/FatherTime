@@ -498,20 +498,226 @@ ApplicationWindow {
                                 spacing: 10
                                 boundsBehavior: Flickable.StopAtBounds
                                 
-                                delegate: TimerCard {
+                                property int draggedIndex: -1
+                                property int dropTargetIndex: -1
+                                
+                                delegate: Item {
+                                    id: delegateItem
                                     width: timersListView.width
-                                    timerItem: modelData
-                                    isSelected: selectedTimerIndex === index
-                                    onDeleteTimer: timerManager.deleteTimer(timerItem.id)
-                                    onStartTimer: timerManager.startTimer(timerItem.id)
-                                    onStopTimer: timerManager.stopTimer(timerItem.id)
-                                    onResetTimer: timerManager.resetTimer(timerItem.id)
-                                    onAdjustTime: timerManager.adjustTime(timerItem.id, seconds)
-                                    onSetCountdown: timerManager.setCountdownTime(timerItem.id, seconds)
-                                    onToggleFavorite: timerManager.toggleTimerFavorite(timerItem.id)
-                                    onSelectTimer: {
-                                        selectedTimerIndex = index
-                                        restoreFocus()
+                                    height: timerCard.height
+                                    
+                                    property bool dragActive: false
+                                    property real dragOffset: 0
+                                    property bool isDisplaced: false
+                                    
+                                    // Calculate if this item should be displaced
+                                    Component.onCompleted: updateDisplacement()
+                                    
+                                    function updateDisplacement() {
+                                        if (timersListView.draggedIndex >= 0 && timersListView.dropTargetIndex >= 0) {
+                                            let draggedIdx = timersListView.draggedIndex
+                                            let targetIdx = timersListView.dropTargetIndex
+                                            let currentIdx = index
+                                            
+                                            // Skip the dragged item itself
+                                            if (currentIdx === draggedIdx) {
+                                                isDisplaced = false
+                                                return
+                                            }
+                                            
+                                            // Determine if this item should be displaced
+                                            if (draggedIdx < targetIdx) {
+                                                // Dragging down: displace items between original and target up
+                                                isDisplaced = (currentIdx > draggedIdx && currentIdx <= targetIdx)
+                                            } else if (draggedIdx > targetIdx) {
+                                                // Dragging up: displace items between target and original down
+                                                isDisplaced = (currentIdx >= targetIdx && currentIdx < draggedIdx)
+                                            } else {
+                                                isDisplaced = false
+                                            }
+                                        } else {
+                                            isDisplaced = false
+                                        }
+                                    }
+                                    
+                                    Connections {
+                                        target: timersListView
+                                        function onDraggedIndexChanged() { delegateItem.updateDisplacement() }
+                                        function onDropTargetIndexChanged() { delegateItem.updateDisplacement() }
+                                    }
+                                    
+                                    TimerCard {
+                                        id: timerCard
+                                        width: parent.width
+                                        timerItem: modelData
+                                        isSelected: selectedTimerIndex === index
+                                        
+                                        // Position with drag offset and displacement
+                                        y: {
+                                            if (dragActive) {
+                                                return dragOffset
+                                            } else if (isDisplaced) {
+                                                let draggedIdx = timersListView.draggedIndex
+                                                let targetIdx = timersListView.dropTargetIndex
+                                                if (draggedIdx < targetIdx) {
+                                                    // Item moves up to make space
+                                                    return -(delegateItem.height + timersListView.spacing)
+                                                } else {
+                                                    // Item moves down to make space
+                                                    return (delegateItem.height + timersListView.spacing)
+                                                }
+                                            } else {
+                                                return 0
+                                            }
+                                        }
+                                        
+                                        // Visual feedback during drag
+                                        opacity: dragActive ? 0.8 : 1.0
+                                        scale: dragActive ? 0.95 : 1.0
+                                        z: dragActive ? 1000 : (isDisplaced ? 10 : 1)  // Always on top when dragging
+                                        
+                                        Behavior on opacity { 
+                                            enabled: !dragActive
+                                            NumberAnimation { duration: 200 } 
+                                        }
+                                        Behavior on scale { 
+                                            enabled: !dragActive
+                                            NumberAnimation { duration: 200 } 
+                                        }
+                                        Behavior on y {
+                                            enabled: !dragActive
+                                            NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+                                        }
+                                        
+                                        onDeleteTimer: timerManager.deleteTimer(timerItem.id)
+                                        onStartTimer: timerManager.startTimer(timerItem.id)
+                                        onStopTimer: timerManager.stopTimer(timerItem.id)
+                                        onResetTimer: timerManager.resetTimer(timerItem.id)
+                                        onAdjustTime: timerManager.adjustTime(timerItem.id, seconds)
+                                        onSetCountdown: timerManager.setCountdownTime(timerItem.id, seconds)
+                                        onToggleFavorite: timerManager.toggleTimerFavorite(timerItem.id)
+                                        onSelectTimer: {
+                                            selectedTimerIndex = index
+                                            restoreFocus()
+                                        }
+                                    }
+                                    
+                                    // Drag handle
+                                    Rectangle {
+                                        width: 20
+                                        height: parent.height
+                                        anchors.left: parent.left
+                                        color: "transparent"
+                                        z: 2000  // Always on top
+                                        
+                                        // Drag handle visual
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 4
+                                            height: parent.height * 0.6
+                                            color: primaryColor
+                                            opacity: dragMouseArea.containsMouse ? 0.7 : 0.4
+                                            radius: 2
+                                            
+                                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                                        }
+                                        
+                                        MouseArea {
+                                            id: dragMouseArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            
+                                            property int startIndex: -1
+                                            property point startPos: Qt.point(0, 0)
+                                            property real startY: 0
+                                            
+                                            onPressed: (mouse) => {
+                                                startIndex = index
+                                                startPos = Qt.point(mouse.x, mouse.y)
+                                                startY = delegateItem.y
+                                                timersListView.draggedIndex = index
+                                            }
+                                            
+                                            onPositionChanged: (mouse) => {
+                                                if (pressed) {
+                                                    let deltaY = mouse.y - startPos.y
+                                                    let distance = Math.abs(deltaY)
+                                                    
+                                                    if (distance > 8 && !delegateItem.dragActive) {
+                                                        delegateItem.dragActive = true
+                                                    }
+                                                    
+                                                    if (delegateItem.dragActive) {
+                                                        // Make the item follow the mouse
+                                                        delegateItem.dragOffset = deltaY
+                                                        
+                                                        // Calculate target drop index in real-time
+                                                        let currentY = startY + deltaY
+                                                        let itemHeight = delegateItem.height + timersListView.spacing
+                                                        let targetIndex = Math.round(currentY / itemHeight)
+                                                        targetIndex = Math.max(0, Math.min(timersListView.count - 1, targetIndex))
+                                                        
+                                                        timersListView.dropTargetIndex = targetIndex
+                                                    }
+                                                }
+                                            }
+                                            
+                                            onReleased: (mouse) => {
+                                                if (delegateItem.dragActive) {
+                                                    let targetIndex = timersListView.dropTargetIndex
+                                                    
+                                                    // Reset visual state
+                                                    delegateItem.dragActive = false
+                                                    delegateItem.dragOffset = 0
+                                                    timersListView.draggedIndex = -1
+                                                    timersListView.dropTargetIndex = -1
+                                                    
+                                                    // Perform reorder if position changed
+                                                    if (startIndex !== targetIndex && targetIndex >= 0) {
+                                                        timerManager.reorderTimer(startIndex, targetIndex)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Drop zone indicator (original position)
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        visible: dragActive
+                                        color: primaryColor
+                                        opacity: 0.15
+                                        radius: 8
+                                        border.color: primaryColor
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Original position"
+                                            color: primaryColor
+                                            font.pixelSize: 10
+                                            opacity: 0.6
+                                        }
+                                    }
+                                    
+                                    // Drop target indicator
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        visible: !dragActive && timersListView.dropTargetIndex === index && timersListView.draggedIndex >= 0
+                                        color: primaryColor
+                                        opacity: 0.25
+                                        radius: 8
+                                        border.color: primaryColor
+                                        border.width: 2
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Drop here"
+                                            color: primaryColor
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                            opacity: 0.8
+                                        }
                                     }
                                 }
                             }

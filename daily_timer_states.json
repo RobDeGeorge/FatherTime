@@ -1,3 +1,105 @@
 {
-  "daily_states": {}
+  "daily_states": {
+    "2025-08-18": {
+      "1": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "2": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "3": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "4": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "5": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      }
+    },
+    "2025-08-19": {
+      "6": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "8": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "11": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      }
+    },
+    "2025-08-20": {
+      "7": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "13": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      }
+    },
+    "2025-08-21": {
+      "9": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      }
+    },
+    "2025-08-17": {
+      "10": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      },
+      "12": {
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "last_started": null
+      }
+    }
+  }
 }

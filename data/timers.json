@@ -1,4 +1,125 @@
 {
-  "timers": [],
-  "next_id": 1
+  "timers": [
+    {
+      "id": 1,
+      "name": "wg",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": false,
+      "created_at": "2025-08-18T17:04:08.026929",
+      "last_started": null,
+      "date_created": "2025-08-18"
+    },
+    {
+      "id": 2,
+      "name": "wwe",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": false,
+      "created_at": "2025-08-18T17:04:10.074951",
+      "last_started": null,
+      "date_created": "2025-08-18"
+    },
+    {
+      "id": 3,
+      "name": "hvcd",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": false,
+      "created_at": "2025-08-18T17:04:28.026407",
+      "last_started": null,
+      "date_created": "2025-08-18"
+    },
+    {
+      "id": 4,
+      "name": "d",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": false,
+      "created_at": "2025-08-18T17:04:32.056300",
+      "last_started": null,
+      "date_created": "2025-08-18"
+    },
+    {
+      "id": 5,
+      "name": "bsbsdb",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": true,
+      "created_at": "2025-08-18T17:04:34.229960",
+      "last_started": null,
+      "date_created": "2025-08-18"
+    },
+    {
+      "id": 8,
+      "name": "lkdn",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": false,
+      "created_at": "2025-08-18T17:12:46.283016",
+      "last_started": null,
+      "date_created": "2025-08-19"
+    },
+    {
+      "id": 11,
+      "name": "bsbsdb",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": true,
+      "created_at": "2025-08-18T17:13:45.594090",
+      "last_started": null,
+      "date_created": "2025-08-18",
+      "propagated_to": "2025-08-19"
+    },
+    {
+      "id": 12,
+      "name": "bsbsdb",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": true,
+      "created_at": "2025-08-18T17:13:46.210975",
+      "last_started": null,
+      "date_created": "2025-08-18",
+      "propagated_to": "2025-08-17"
+    },
+    {
+      "id": 13,
+      "name": "bsbsdb",
+      "type": "stopwatch",
+      "elapsed_seconds": 0,
+      "countdown_seconds": 0,
+      "initial_countdown_seconds": 0,
+      "is_running": false,
+      "is_favorite": true,
+      "created_at": "2025-08-18T17:13:46.778153",
+      "last_started": null,
+      "date_created": "2025-08-18",
+      "propagated_to": "2025-08-20"
+    }
+  ],
+  "next_id": 14
 }
