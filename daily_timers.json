@@ -2,54 +2,28 @@
   "daily_timers": {
     "2025-08-18": [
       {
-        "id": 3,
-        "name": "wkn",
-        "type": "stopwatch",
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "is_favorite": false,
-        "created_at": "2025-08-18T17:46:19.181092",
-        "last_started": null,
-        "date_created": "2025-08-18"
-      },
-      {
-        "id": 4,
-        "name": "fwelfjbweljfbwe",
-        "type": "stopwatch",
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "is_favorite": false,
-        "created_at": "2025-08-18T17:46:32.713547",
-        "last_started": null,
-        "date_created": "2025-08-18"
-      },
-      {
-        "id": 5,
+        "id": 2,
         "name": "test",
-        "type": "stopwatch",
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "is_favorite": false,
-        "created_at": "2025-08-18T17:46:44.421883",
-        "last_started": null,
-        "date_created": "2025-08-18"
-      },
-      {
-        "id": 6,
-        "name": "ihtil3h",
         "type": "countdown",
         "elapsed_seconds": 0,
         "countdown_seconds": 0,
         "initial_countdown_seconds": 0,
         "is_running": false,
         "is_favorite": false,
-        "created_at": "2025-08-18T17:47:11.549250",
+        "created_at": "2025-08-18T18:18:46.329399",
+        "last_started": null,
+        "date_created": "2025-08-18"
+      },
+      {
+        "id": 3,
+        "name": "edit",
+        "type": "stopwatch",
+        "elapsed_seconds": 0,
+        "countdown_seconds": 0,
+        "initial_countdown_seconds": 0,
+        "is_running": false,
+        "is_favorite": false,
+        "created_at": "2025-08-18T19:09:37.708523",
         "last_started": null,
         "date_created": "2025-08-18"
       }

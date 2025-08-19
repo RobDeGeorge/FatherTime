@@ -625,7 +625,7 @@ Dialog {
                     // Current time reference
                     Text {
                         text: "Current: " + (currentTimer ? currentTimer.displayTime : "00:00:00")
-                        font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
+                        font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                         color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
                         Layout.alignment: Qt.AlignHCenter
                         Layout.fillWidth: true
@@ -683,8 +683,8 @@ Dialog {
             Button {
                 id: cancelButton
                 text: "Cancel"
-                Layout.preferredWidth: Math.max(70, Math.min(root.width * 0.2, 100))
-                Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
+                Layout.preferredWidth: Math.max(80, Math.min(root.width * 0.2, 110))
+                Layout.preferredHeight: Math.max(36, Math.min(root.height * 0.06, 40))
                 
                 background: Rectangle {
                     color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -717,8 +717,8 @@ Dialog {
                 id: saveButton
                 text: "Save Changes"
                 enabled: true  // Temporarily always enable for debugging
-                Layout.preferredWidth: Math.max(100, Math.min(root.width * 0.25, 140))
-                Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
+                Layout.preferredWidth: Math.max(110, Math.min(root.width * 0.25, 150))
+                Layout.preferredHeight: Math.max(36, Math.min(root.height * 0.06, 40))
                 
                 background: Rectangle {
                     color: {

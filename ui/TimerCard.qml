@@ -30,7 +30,7 @@ Rectangle {
     RowLayout {
         anchors.fill: parent
         anchors.margins: 8
-        anchors.topMargin: 4
+        anchors.topMargin: 1
         spacing: 6
         
         // Left Section: Timer Info and Favorite
@@ -45,14 +45,14 @@ Rectangle {
                 Layout.alignment: Qt.AlignLeft
                 width: 70
                 height: 18
-                radius: 9
+                radius: 5
                 color: timerItem && timerItem.type === "countdown" ? successColor : accentColor
                 
                 Text {
                     anchors.centerIn: parent
                     text: timerItem && timerItem.type === "countdown" ? "Countdown" : "Stopwatch"
-                    color: "white"
-                    font.pixelSize: 8
+                    color: Qt.darker(parent.parent.background.color, 3.0)
+                    font.pixelSize: 10
                     focus: false
                     font.bold: true
                 }
@@ -61,7 +61,7 @@ Rectangle {
             // Timer name
             Text {
                 text: timerItem ? timerItem.name : ""
-                font.pixelSize: 16
+                font.pixelSize: 28
                 font.bold: true
                 color: primaryColor
                 elide: Text.ElideRight
@@ -83,8 +83,8 @@ Rectangle {
                 // Favorite button (to the right of timer display, below badge level)
                 Button {
                     Layout.alignment: Qt.AlignVCenter
-                    width: 28
-                    height: 28
+                    width: 34
+                    height: 34
                     focus: false
                     
                     background: Rectangle {
@@ -105,7 +105,7 @@ Rectangle {
                     
                     contentItem: Text {
                         text: "★"
-                        color: timerItem && timerItem.isFavorite ? "white" : "#bdc3c7"
+                        color: timerItem && timerItem.isFavorite ? Qt.darker(parent.parent.background.color, 3.0) : "#666666"
                         font.pixelSize: 14
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
@@ -124,21 +124,21 @@ Rectangle {
         // Right Section: All control buttons (leaving space under delete button)
         RowLayout {
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            Layout.topMargin: 28  // Leave space under delete button
-            Layout.rightMargin: 32  // Add space from right edge
-            spacing: 6
+            Layout.topMargin: 12  // Leave space under delete button
+            Layout.rightMargin: 38  // Add space from right edge
+            spacing: 14
             
             // Start/Stop and Reset buttons
             RowLayout {
                 Layout.alignment: Qt.AlignVCenter
-                spacing: 3
+                spacing: 14
                 
                 // Start/Stop Button
                 Button {
-                    Layout.preferredWidth: 60
-                    Layout.preferredHeight: 30
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 48
                     text: timerItem && timerItem.isRunning ? "Stop" : "Start"
-                    font.pixelSize: 10
+                    font.pixelSize: 14
                     focus: false
                     background: Rectangle {
                         color: {
@@ -150,7 +150,7 @@ Rectangle {
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Qt.darker(parent.parent.background.color, 3.0)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: parent.font.pixelSize
@@ -167,10 +167,10 @@ Rectangle {
                 
                 // Reset Button
                 Button {
-                    Layout.preferredWidth: 50
-                    Layout.preferredHeight: 30
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 48
                     text: "Reset"
-                    font.pixelSize: 10
+                    font.pixelSize: 14
                     focus: false
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(warningColor) : warningColor
@@ -178,7 +178,7 @@ Rectangle {
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Qt.darker(parent.parent.background.color, 3.0)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: parent.font.pixelSize
@@ -191,19 +191,19 @@ Rectangle {
             // Time increment controls (increment button above +/- buttons)
             ColumnLayout {
                 Layout.alignment: Qt.AlignVCenter
-                spacing: 2
+                spacing: 8
                 
                 // Time increment toggle (above +/- buttons)
                 Button {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 50
-                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: 60
+                    Layout.preferredHeight: 30
                     property var increments: [60, 300, 1800, 3600] // 1m, 5m, 30m, 1h
                     property var incrementLabels: ["1m", "5m", "30m", "1h"]
                     property int currentIndex: 0
                     
                     text: incrementLabels[currentIndex]
-                    font.pixelSize: 8
+                    font.pixelSize: 11
                     focus: false
                     
                     background: Rectangle {
@@ -214,7 +214,7 @@ Rectangle {
                     
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Qt.darker(parent.parent.background.color, 3.0)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: parent.font.pixelSize
@@ -236,10 +236,10 @@ Rectangle {
                     
                     // Minus Button
                     Button {
-                        Layout.preferredWidth: 24
-                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: 28
+                        Layout.preferredHeight: 28
                         text: "−"
-                        font.pixelSize: 12
+                        font.pixelSize: 18
                         focus: false
                         
                         property Button incrementButton: parent.parent.children[0]
@@ -251,7 +251,7 @@ Rectangle {
                         
                         contentItem: Text {
                             text: parent.text
-                            color: "white"
+                            color: Qt.darker(parent.parent.background.color, 3.0)
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             font.pixelSize: parent.font.pixelSize
@@ -265,10 +265,10 @@ Rectangle {
                     
                     // Plus Button
                     Button {
-                        Layout.preferredWidth: 24
-                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: 28
+                        Layout.preferredHeight: 28
                         text: "+"
-                        font.pixelSize: 12
+                        font.pixelSize: 18
                         focus: false
                         
                         property Button incrementButton: parent.parent.children[0]
@@ -280,7 +280,7 @@ Rectangle {
                         
                         contentItem: Text {
                             text: parent.text
-                            color: "white"
+                            color: Qt.darker(parent.parent.background.color, 3.0)
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             font.pixelSize: parent.font.pixelSize
@@ -300,8 +300,8 @@ Rectangle {
     Button {
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.topMargin: 8
-        anchors.rightMargin: 8
+        anchors.topMargin: 6
+        anchors.rightMargin: 6
         width: 24
         height: 24
         focus: false
@@ -318,8 +318,8 @@ Rectangle {
         
         contentItem: Text {
             text: "×"
-            color: "white"
-            font.pixelSize: 16
+            color: Qt.darker(parent.background.color, 3.0)
+            font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

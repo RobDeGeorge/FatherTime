@@ -2,18 +2,18 @@
   "daily_states": {
     "2025-08-18": {
       "1": {
-        "elapsed_seconds": 0,
+        "elapsed_seconds": 11,
         "countdown_seconds": 0,
         "initial_countdown_seconds": 0,
         "is_running": false,
-        "last_started": null
+        "last_started": "2025-08-18T18:18:21.715540"
       },
       "2": {
-        "elapsed_seconds": 19929,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
+        "elapsed_seconds": 0,
+        "countdown_seconds": 4,
+        "initial_countdown_seconds": 4,
         "is_running": false,
-        "last_started": "2025-08-18T17:45:15.453236"
+        "last_started": "2025-08-18T18:18:58.568910"
       },
       "3": {
         "elapsed_seconds": 0,
@@ -21,27 +21,6 @@
         "initial_countdown_seconds": 0,
         "is_running": false,
         "last_started": null
-      },
-      "4": {
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": null
-      },
-      "5": {
-        "elapsed_seconds": 10,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": "2025-08-18T18:09:36.460655"
-      },
-      "6": {
-        "elapsed_seconds": 0,
-        "countdown_seconds": 0,
-        "initial_countdown_seconds": 0,
-        "is_running": false,
-        "last_started": "2025-08-18T17:53:18.989381"
       }
     }
   }

@@ -176,7 +176,7 @@ Dialog {
                         
                         Text {
                             text: "🗑️ All timer definitions and configurations"
-                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -185,7 +185,7 @@ Dialog {
                         }
                         Text {
                             text: "📊 All work sessions and time tracking history"
-                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -194,7 +194,7 @@ Dialog {
                         }
                         Text {
                             text: "📈 All daily statistics and breakdowns"
-                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -203,7 +203,7 @@ Dialog {
                         }
                         Text {
                             text: "📅 All date-specific timer states"
-                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 13))
+                            font.pixelSize: Math.max(10, Math.min(root.width * 0.025, 14))
                             color: window.textColor
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -349,8 +349,8 @@ Dialog {
                 
                 Button {
                     text: "Cancel"
-                    Layout.preferredWidth: Math.max(80, Math.min(root.width * 0.2, 120))
-                    Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
+                    Layout.preferredWidth: Math.max(90, Math.min(root.width * 0.2, 130))
+                    Layout.preferredHeight: Math.max(36, Math.min(root.height * 0.06, 40))
                     
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -381,8 +381,8 @@ Dialog {
                 Button {
                     text: confirmSlider.value >= 95 ? "CONFIRM RESET" : "Slide to confirm →"
                     enabled: confirmSlider.value >= 95
-                    Layout.preferredWidth: Math.max(130, Math.min(root.width * 0.3, 170))
-                    Layout.preferredHeight: Math.max(32, Math.min(root.height * 0.06, 40))
+                    Layout.preferredWidth: Math.max(140, Math.min(root.width * 0.3, 180))
+                    Layout.preferredHeight: Math.max(36, Math.min(root.height * 0.06, 40))
                     
                     background: Rectangle {
                         color: {

@@ -313,8 +313,8 @@ Dialog {
             
             Button {
                 text: "Cancel"
-                Layout.preferredWidth: 90
-                Layout.preferredHeight: 36
+                Layout.preferredWidth: 100
+                Layout.preferredHeight: 40
                 
                 background: Rectangle {
                     color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -331,7 +331,7 @@ Dialog {
                     color: window.textColor
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                     font.weight: Font.Medium
                 }
                 
@@ -345,8 +345,8 @@ Dialog {
                 text: "Create Timer"
                 enabled: countdownNameField.text.trim() !== "" && 
                         (hoursSpinBox.value > 0 || minutesSpinBox.value > 0 || secondsSpinBox.value > 0)
-                Layout.preferredWidth: 120
-                Layout.preferredHeight: 36
+                Layout.preferredWidth: 130
+                Layout.preferredHeight: 40
                 
                 background: Rectangle {
                     color: {
@@ -367,7 +367,7 @@ Dialog {
                     color: parent.enabled ? "white" : Qt.rgba(1, 1, 1, 0.5)
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                     font.weight: Font.Medium
                 }
                 

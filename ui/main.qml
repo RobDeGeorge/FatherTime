@@ -414,16 +414,16 @@ ApplicationWindow {
                                     
                                     Button {
                                         text: "+ Stopwatch"
-                                        font.pixelSize: 12
-                                        Layout.preferredWidth: 100
-                                        Layout.preferredHeight: 35
+                                        font.pixelSize: 14
+                                        Layout.preferredWidth: 120
+                                        Layout.preferredHeight: 42
                                         background: Rectangle {
                                             color: parent.pressed ? Qt.darker(accentColor) : accentColor
                                             radius: 6
                                         }
                                         contentItem: Text {
                                             text: parent.text
-                                            color: "white"
+                                            color: Qt.darker(parent.parent.background.color, 3.0)
                                             horizontalAlignment: Text.AlignHCenter
                                             verticalAlignment: Text.AlignVCenter
                                             font.pixelSize: parent.font.pixelSize
@@ -436,16 +436,16 @@ ApplicationWindow {
                                     
                                     Button {
                                         text: "+ Countdown"
-                                        font.pixelSize: 12
-                                        Layout.preferredWidth: 100
-                                        Layout.preferredHeight: 35
+                                        font.pixelSize: 14
+                                        Layout.preferredWidth: 120
+                                        Layout.preferredHeight: 42
                                         background: Rectangle {
                                             color: parent.pressed ? Qt.darker(successColor) : successColor
                                             radius: 6
                                         }
                                         contentItem: Text {
                                             text: parent.text
-                                            color: "white"
+                                            color: Qt.darker(parent.parent.background.color, 3.0)
                                             horizontalAlignment: Text.AlignHCenter
                                             verticalAlignment: Text.AlignVCenter
                                             font.pixelSize: parent.font.pixelSize
@@ -458,9 +458,9 @@ ApplicationWindow {
                                     
                                     Button {
                                         text: "Reset Data"
-                                        font.pixelSize: 12
-                                        Layout.preferredWidth: 90
-                                        Layout.preferredHeight: 35
+                                        font.pixelSize: 14
+                                        Layout.preferredWidth: 110
+                                        Layout.preferredHeight: 42
                                         visible: true
                                         background: Rectangle {
                                             color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
@@ -468,7 +468,7 @@ ApplicationWindow {
                                         }
                                         contentItem: Text {
                                             text: parent.text
-                                            color: "white"
+                                            color: Qt.darker(parent.parent.background.color, 3.0)
                                             horizontalAlignment: Text.AlignHCenter
                                             verticalAlignment: Text.AlignVCenter
                                             font.pixelSize: parent.font.pixelSize
@@ -784,8 +784,8 @@ ApplicationWindow {
                                 
                                 Button {
                                     text: "◀"
-                                    width: 25
-                                    height: 25
+                                    width: 32
+                                    height: 32
                                     background: Rectangle {
                                         color: parent.pressed ? Qt.darker("white", 1.2) : "white"
                                         radius: 4
@@ -793,10 +793,10 @@ ApplicationWindow {
                                     }
                                     contentItem: Text {
                                         text: parent.text
-                                        color: primaryColor
+                                        color: Qt.darker(parent.parent.background.color, 3.0)
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
-                                        font.pixelSize: 10
+                                        font.pixelSize: 12
                                     }
                                     onClicked: {
                                         if (currentMonth === 0) {
@@ -817,8 +817,8 @@ ApplicationWindow {
                                 
                                 Button {
                                     text: "▶"
-                                    width: 25
-                                    height: 25
+                                    width: 32
+                                    height: 32
                                     background: Rectangle {
                                         color: parent.pressed ? Qt.darker("white", 1.2) : "white"
                                         radius: 4
@@ -826,10 +826,10 @@ ApplicationWindow {
                                     }
                                     contentItem: Text {
                                         text: parent.text
-                                        color: primaryColor
+                                        color: Qt.darker(parent.parent.background.color, 3.0)
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
-                                        font.pixelSize: 10
+                                        font.pixelSize: 12
                                     }
                                     onClicked: {
                                         if (currentMonth === 11) {
@@ -850,7 +850,7 @@ ApplicationWindow {
                                 
                                 Button {
                                     text: "Today"
-                                    font.pixelSize: 10
+                                    font.pixelSize: 12
                                     background: Rectangle {
                                         color: parent.pressed ? Qt.darker(accentColor) : accentColor
                                         radius: 4
@@ -1028,8 +1028,8 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.topMargin: 10
         anchors.rightMargin: 10
-        width: 32
-        height: 32
+        width: 40
+        height: 40
         z: 100  // High z-order to appear above other content
         
         background: Rectangle {
@@ -1042,8 +1042,8 @@ ApplicationWindow {
         
         contentItem: Text {
             text: "⚙"
-            color: backgroundColor
-            font.pixelSize: 16
+            color: Qt.darker(parent.background.color, 3.0)
+            font.pixelSize: 20
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

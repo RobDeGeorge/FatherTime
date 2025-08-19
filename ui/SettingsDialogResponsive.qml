@@ -183,7 +183,7 @@ Dialog {
                         
                         Text {
                             text: "Color Theme"
-                            font.pixelSize: 13
+                            font.pixelSize: 14
                             font.weight: Font.Medium
                             color: window.textColor
                         }
@@ -373,7 +373,7 @@ Dialog {
                             
                             Text {
                                 text: "Enable Rounding:"
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                                 font.weight: Font.Medium
                                 color: window.textColor
                                 Layout.preferredWidth: 120
@@ -399,7 +399,7 @@ Dialog {
                             
                             Text {
                                 text: "Round to:"
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                                 font.weight: Font.Medium
                                 color: window.textColor
                                 Layout.preferredWidth: 120
@@ -442,7 +442,7 @@ Dialog {
                                 
                                 contentItem: Text {
                                     text: parent.displayText
-                                    color: window.textColor
+                                    color: Qt.darker(parent.parent.background.color, 2.5)
                                     font.pixelSize: 12
                                     verticalAlignment: Text.AlignVCenter
                                     leftPadding: 10
@@ -489,8 +489,8 @@ Dialog {
                 
                 Button {
                     text: "Cancel"
-                    Layout.preferredWidth: 90
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -504,10 +504,10 @@ Dialog {
                     
                     contentItem: Text {
                         text: parent.text
-                        color: window.textColor
+                        color: Qt.darker(parent.parent.background.color, 3.0)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         font.weight: Font.Medium
                     }
                     
@@ -519,8 +519,8 @@ Dialog {
                 
                 Button {
                     text: "Done"
-                    Layout.preferredWidth: 80
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 90
+                    Layout.preferredHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(window.primaryColor, 1.1) : 
@@ -534,10 +534,10 @@ Dialog {
                     
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Qt.darker(parent.parent.background.color, 3.0)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         font.weight: Font.Medium
                     }
                     

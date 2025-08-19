@@ -224,8 +224,8 @@ Dialog {
                 
                 Button {
                     text: "Cancel"
-                    Layout.preferredWidth: 80
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 90
+                    Layout.preferredHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? Qt.darker(window.cardBorderColor, 1.1) : 
@@ -242,7 +242,7 @@ Dialog {
                         color: window.textColor
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         font.weight: Font.Medium
                     }
                     
@@ -256,8 +256,8 @@ Dialog {
                 Button {
                     text: "Create"
                     enabled: timerNameField.text.trim() !== ""
-                    Layout.preferredWidth: 80
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 90
+                    Layout.preferredHeight: 40
                     
                     background: Rectangle {
                         color: {
@@ -278,7 +278,7 @@ Dialog {
                         color: parent.enabled ? "white" : Qt.rgba(1, 1, 1, 0.5)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         font.weight: Font.Medium
                     }
                     
