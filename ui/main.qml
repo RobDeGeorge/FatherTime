@@ -4,8 +4,8 @@ import QtQuick.Layouts 1.15
 
 ApplicationWindow {
     id: window
-    width: 1200
-    height: 700
+    width: configManager.windowWidth
+    height: configManager.windowHeight
     visible: true
     title: "Father Time"
     

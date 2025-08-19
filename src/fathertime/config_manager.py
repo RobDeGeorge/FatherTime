@@ -18,6 +18,7 @@ class ConfigManager(QObject):
     colorsChanged = Signal()
     timeRoundingChanged = Signal()
     calendarViewChanged = Signal()
+    windowSizeChanged = Signal()
 
     def __init__(
         self, config_file: Optional[str] = None, data_dir: Optional[str] = None
@@ -41,13 +42,22 @@ class ConfigManager(QObject):
             self._config_data = self._load_config()
             self._colors = self._config_data.get("colors", DEFAULT_COLORS.copy())
             self._calendar_view = self._config_data.get("calendar_view", "month")
+            self._window_width = self._config_data.get("window_width", 1200)
+            self._window_height = self._config_data.get("window_height", 700)
             logger.info(f"Config loaded from {self.config_file}")
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-            self._config_data = {"colors": DEFAULT_COLORS.copy(), "calendar_view": "month"}
+            self._config_data = {
+                "colors": DEFAULT_COLORS.copy(), 
+                "calendar_view": "month",
+                "window_width": 1200,
+                "window_height": 700
+            }
             self._colors = DEFAULT_COLORS.copy()
             self._calendar_view = "month"
-            logger.info("Using default colors and calendar view")
+            self._window_width = 1200
+            self._window_height = 700
+            logger.info("Using default colors, calendar view, and window size")
 
     def _validate_and_resolve_path(self, data_dir: Optional[str]) -> Path:
         """Validate and resolve data directory path securely.
@@ -413,3 +423,37 @@ class ConfigManager(QObject):
         new_view = "week" if self._calendar_view == "month" else "month"
         self.setCalendarView(new_view)
         logger.info(f"Toggled calendar view to: {new_view}")
+
+    @Property(int, notify=windowSizeChanged)
+    def windowWidth(self) -> int:
+        """Get default window width."""
+        return self._window_width
+    
+    @Property(int, notify=windowSizeChanged)
+    def windowHeight(self) -> int:
+        """Get default window height."""
+        return self._window_height
+    
+    @Slot(int)
+    def setWindowWidth(self, width: int) -> None:
+        """Set default window width."""
+        if width < 800 or width > 3840:
+            raise ConfigError(f"Invalid window width: {width}. Must be between 800 and 3840")
+        
+        logger.info(f"Setting window width: {width}")
+        self._window_width = width
+        self._config_data["window_width"] = width
+        self._save_config(self._config_data)
+        self.windowSizeChanged.emit()
+    
+    @Slot(int)
+    def setWindowHeight(self, height: int) -> None:
+        """Set default window height."""
+        if height < 600 or height > 2160:
+            raise ConfigError(f"Invalid window height: {height}. Must be between 600 and 2160")
+        
+        logger.info(f"Setting window height: {height}")
+        self._window_height = height
+        self._config_data["window_height"] = height
+        self._save_config(self._config_data)
+        self.windowSizeChanged.emit()

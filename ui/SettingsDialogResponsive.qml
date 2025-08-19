@@ -471,6 +471,179 @@ Dialog {
                 }
             }
             
+            // === WINDOW SETTINGS SECTION ===
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 280
+                color: window.cardBackgroundColor
+                border.color: window.cardBorderColor
+                border.width: 1
+                radius: 12
+                
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 25
+                    spacing: 18
+                    
+                    // Section header
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        
+                        Rectangle {
+                            width: 32
+                            height: 32
+                            color: Qt.rgba(window.primaryColor.r, window.primaryColor.g, window.primaryColor.b, 0.15)
+                            radius: Math.max(width * 0.25, 8)
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "🖥"
+                                font.pixelSize: Math.max(parent.width * 0.5, 14)
+                            }
+                        }
+                        
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            
+                            Text {
+                                text: "Window Settings"
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: window.textColor
+                            }
+                            
+                            Text {
+                                text: "Configure default window size on startup"
+                                font.pixelSize: 11
+                                color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
+                            }
+                        }
+                    }
+                    
+                    // Window size controls
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        
+                        // Width setting
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            
+                            Text {
+                                text: "Width:"
+                                font.pixelSize: 14
+                                font.weight: Font.Medium
+                                color: window.textColor
+                                Layout.preferredWidth: 80
+                            }
+                            
+                            SpinBox {
+                                id: widthSpinBox
+                                Layout.preferredWidth: 120
+                                from: 800
+                                to: 3840
+                                stepSize: 50
+                                value: configManager.windowWidth
+                                
+                                onValueModified: {
+                                    configManager.setWindowWidth(value)
+                                }
+                                
+                                background: Rectangle {
+                                    color: window.backgroundColor
+                                    border.color: window.cardBorderColor
+                                    border.width: 1
+                                    radius: 6
+                                }
+                            }
+                            
+                            Text {
+                                text: "pixels"
+                                font.pixelSize: 12
+                                color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                        }
+                        
+                        // Height setting
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            
+                            Text {
+                                text: "Height:"
+                                font.pixelSize: 14
+                                font.weight: Font.Medium
+                                color: window.textColor
+                                Layout.preferredWidth: 80
+                            }
+                            
+                            SpinBox {
+                                id: heightSpinBox
+                                Layout.preferredWidth: 120
+                                from: 600
+                                to: 2160
+                                stepSize: 50
+                                value: configManager.windowHeight
+                                
+                                onValueModified: {
+                                    configManager.setWindowHeight(value)
+                                }
+                                
+                                background: Rectangle {
+                                    color: window.backgroundColor
+                                    border.color: window.cardBorderColor
+                                    border.width: 1
+                                    radius: 6
+                                }
+                            }
+                            
+                            Text {
+                                text: "pixels"
+                                font.pixelSize: 12
+                                color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                        }
+                        
+                        // Current size display
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            
+                            Text {
+                                text: "Current size:"
+                                font.pixelSize: 12
+                                color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.7)
+                            }
+                            
+                            Text {
+                                text: window.width + " × " + window.height
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                color: window.textColor
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                        }
+                        
+                        // Info text
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Note: Window size changes will take effect on next application startup"
+                            font.pixelSize: 10
+                            color: Qt.rgba(window.textColor.r, window.textColor.g, window.textColor.b, 0.6)
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+            }
+            
             // Flexible spacer
             Item {
                 Layout.fillHeight: true
