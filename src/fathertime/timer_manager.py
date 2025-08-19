@@ -269,59 +269,40 @@ class TimerManager(QObject):
             if merged_data.get("is_running", False):
                 self._running_timer_ids.add(data["id"])
         
-        # Always ensure favorites are at the top, regardless of existing order
+        # Respect the saved display order exactly as manually arranged
         if display_order:
-            # Separate timers into favorites and non-favorites based on the order
-            ordered_favorites = []
-            ordered_regular = []
-            
+            # Add timers in the exact order they were saved
             for timer_id in display_order:
                 if timer_id in timer_items:
                     timer_item = timer_items[timer_id]
-                    if timer_item.isFavorite:
-                        ordered_favorites.append(timer_item)
-                    else:
-                        ordered_regular.append(timer_item)
+                    self._timers.append(timer_item)
                     del timer_items[timer_id]
-            
-            # Add favorites first, then regular timers
-            self._timers.extend(ordered_favorites)
-            self._timers.extend(ordered_regular)
         
         # Add any remaining timers that weren't in the display order
-        # Sort with favorites first, then by creation order
+        # Add new timers at the end, sorted by creation order
         remaining_timers = list(timer_items.values())
         if remaining_timers:
-            # Sort: favorites first (False sorts before True, so use 'not isFavorite'), then by timer ID
-            remaining_timers.sort(key=lambda t: (not t.isFavorite, t.id))
-            
-            # Insert remaining favorites at the beginning, regular timers at the end
-            remaining_favorites = [t for t in remaining_timers if t.isFavorite]
-            remaining_regular = [t for t in remaining_timers if not t.isFavorite]
-            
-            # Insert favorites at the beginning
-            for i, fav_timer in enumerate(remaining_favorites):
-                self._timers.insert(i, fav_timer)
-            
-            # Append regular timers at the end
-            self._timers.extend(remaining_regular)
+            # Sort by timer ID (creation order)
+            remaining_timers.sort(key=lambda t: t.id)
+            # Append all remaining timers at the end
+            self._timers.extend(remaining_timers)
         
-        # Update the display order to match the corrected favorites-first arrangement
+        # Update the display order to match the current layout (no auto-correction)
         self._update_display_order_for_current_layout()
                 
         self.timersChanged.emit()
     
     def _update_display_order_for_current_layout(self):
-        """Update the display order to match the current timer layout (favorites first)."""
+        """Update the display order to match the current timer layout."""
         current_date = self._get_current_date_string()
         
-        # Create the corrected order based on current timer layout
-        corrected_order = [timer.id for timer in self._timers]
+        # Create the order based on current timer layout
+        current_order = [timer.id for timer in self._timers]
         
         # Only update if the order has actually changed
         existing_order = self.db.get_timer_order(current_date)
-        if corrected_order != existing_order:
-            self.db.update_timer_order(current_date, corrected_order)
+        if current_order != existing_order:
+            self.db.update_timer_order(current_date, current_order)
         
     def _get_current_date_string(self):
         """Get current date as string, but use selectedDateForTimers from UI if available"""
@@ -673,41 +654,12 @@ class TimerManager(QObject):
             if timer_item:
                 timer_item.isFavorite = new_status
             
-            # If timer was just favorited, move it to the top
-            if new_status and not was_favorite:
-                self._move_favorited_timer_to_top(timer_id)
-            else:
-                # Just reload timers for other cases (unfavoriting or reload)
-                self._load_timers()
+            # Just reload timers to update the UI (no auto-reordering)
+            self._load_timers()
                 
         except Exception as e:
             logger.error(f"Failed to toggle timer favorite: {e}")
     
-    def _move_favorited_timer_to_top(self, timer_id: int):
-        """Move a newly favorited timer to the top of the list.
-        
-        Args:
-            timer_id: ID of the timer that was just favorited
-        """
-        current_date = self._get_current_date_string()
-        current_order = self.db.get_timer_order(current_date)
-        
-        # Create new order with favorited timer at top
-        new_order = []
-        
-        # Add the favorited timer first
-        new_order.append(timer_id)
-        
-        # Add all other timers except the one we just favorited
-        for existing_id in current_order:
-            if existing_id != timer_id:
-                new_order.append(existing_id)
-        
-        # Update the order in database
-        self.db.update_timer_order(current_date, new_order)
-        
-        # Reload timers to reflect the new order
-        self._load_timers()
 
     @Slot(int, str)
     def renameTimer(self, timer_id: int, new_name: str):

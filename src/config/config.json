@@ -1,17 +1,17 @@
 {
   "colors": {
-    "primary": "#61afef",
-    "secondary": "#e06c75",
-    "accent": "#56b6c2",
-    "success": "#98c379",
-    "danger": "#e06c75",
-    "warning": "#e5c07b",
-    "background": "#1e2127",
-    "text": "#abb2bf",
-    "cardBackground": "#2c323c",
-    "cardBorder": "#3e4451"
+    "primary": "#2c3e50",
+    "secondary": "#34495e",
+    "accent": "#3498db",
+    "success": "#27ae60",
+    "danger": "#e74c3c",
+    "warning": "#f39c12",
+    "background": "#ecf0f1",
+    "text": "#2c3e50",
+    "cardBackground": "#ffffff",
+    "cardBorder": "#e0e0e0"
   },
-  "currentTheme": "oneDark",
+  "currentTheme": "default",
   "timeRounding": {
     "enabled": false,
     "roundingMinutes": 60

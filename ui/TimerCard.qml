@@ -29,58 +29,85 @@ Rectangle {
     
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 15
+        anchors.margins: 8
+        anchors.topMargin: 4
+        spacing: 6
         
-        // Timer Info Section
+        // Left Section: Timer Info and Favorite
         ColumnLayout {
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
             Layout.fillWidth: true
-            spacing: 5
+            Layout.leftMargin: 6
+            spacing: 1
             
-            // Timer name and type
-            RowLayout {
-                spacing: 8
+            // Type badge (above title)
+            Rectangle {
+                Layout.alignment: Qt.AlignLeft
+                width: 70
+                height: 18
+                radius: 9
+                color: timerItem && timerItem.type === "countdown" ? successColor : accentColor
                 
                 Text {
-                    text: timerItem ? timerItem.name : ""
-                    font.pixelSize: 16
+                    anchors.centerIn: parent
+                    text: timerItem && timerItem.type === "countdown" ? "Countdown" : "Stopwatch"
+                    color: "white"
+                    font.pixelSize: 8
+                    focus: false
                     font.bold: true
-                    color: primaryColor
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
+                }
+            }
+            
+            // Timer name
+            Text {
+                text: timerItem ? timerItem.name : ""
+                font.pixelSize: 16
+                font.bold: true
+                color: primaryColor
+                elide: Text.ElideRight
+            }
+            
+            // Second row: Timer display and favorite button
+            RowLayout {
+                spacing: 4
+                
+                // Display time
+                Text {
+                    text: timerItem ? timerItem.displayTime : "00:00:00"
+                    font.pixelSize: 24
+                    font.bold: true
+                    color: timerItem && timerItem.isRunning ? successColor : primaryColor
+                    font.family: "monospace"
                 }
                 
-                Rectangle {
-                    width: 70
-                    height: 18
-                    radius: 9
-                    color: timerItem && timerItem.type === "countdown" ? successColor : accentColor
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: timerItem && timerItem.type === "countdown" ? "Countdown" : "Stopwatch"
-                        color: "white"
-                        font.pixelSize: 8
-                focus: false
-                        font.bold: true
-                    }
-                }
-                
-                // Favorite star button
+                // Favorite button (to the right of timer display, below badge level)
                 Button {
-                    Layout.preferredWidth: 24
-                    Layout.preferredHeight: 24
+                    Layout.alignment: Qt.AlignVCenter
+                    width: 28
+                    height: 28
+                    focus: false
+                    
                     background: Rectangle {
-                        radius: 12
-                        color: "transparent"
+                        radius: 14
+                        color: timerItem && timerItem.isFavorite ? warningColor : "transparent"
                         border.color: timerItem && timerItem.isFavorite ? warningColor : "#bdc3c7"
-                        border.width: 1
+                        border.width: 2
+                        opacity: parent.hovered ? 1.0 : (timerItem && timerItem.isFavorite ? 0.9 : 0.4)
+                        
+                        Behavior on opacity {
+                            NumberAnimation { duration: 150 }
+                        }
+                        
+                        Behavior on color {
+                            ColorAnimation { duration: 200 }
+                        }
                     }
                     
                     contentItem: Text {
                         text: "★"
-                        color: timerItem && timerItem.isFavorite ? warningColor : "#bdc3c7"
-                        font.pixelSize: 12
+                        color: timerItem && timerItem.isFavorite ? "white" : "#bdc3c7"
+                        font.pixelSize: 14
+                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -89,186 +116,228 @@ Rectangle {
                     
                     ToolTip.visible: hovered
                     ToolTip.text: timerItem && timerItem.isFavorite ? "Remove from favorites" : "Add to favorites"
+                    ToolTip.delay: 500
                 }
-            }
-            
-            // Display time
-            Text {
-                text: timerItem ? timerItem.displayTime : "00:00:00"
-                font.pixelSize: 24
-                font.bold: true
-                color: timerItem && timerItem.isRunning ? successColor : primaryColor
-                font.family: "monospace"
             }
         }
         
-        // Control Buttons Section - All Horizontal
+        // Right Section: All control buttons (leaving space under delete button)
         RowLayout {
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+            Layout.topMargin: 28  // Leave space under delete button
+            Layout.rightMargin: 32  // Add space from right edge
             spacing: 6
             
-            // Start/Stop Button
-            Button {
-                Layout.preferredWidth: 60
-                Layout.preferredHeight: 30
-                text: timerItem && timerItem.isRunning ? "Stop" : "Start"
-                font.pixelSize: 10
-                focus: false
-                background: Rectangle {
-                    color: {
-                        if (!parent.enabled) return "#bdc3c7"
-                        if (parent.pressed) return Qt.darker(timerItem && timerItem.isRunning ? dangerColor : successColor)
-                        return timerItem && timerItem.isRunning ? dangerColor : successColor
+            // Start/Stop and Reset buttons
+            RowLayout {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 3
+                
+                // Start/Stop Button
+                Button {
+                    Layout.preferredWidth: 60
+                    Layout.preferredHeight: 30
+                    text: timerItem && timerItem.isRunning ? "Stop" : "Start"
+                    font.pixelSize: 10
+                    focus: false
+                    background: Rectangle {
+                        color: {
+                            if (!parent.enabled) return "#bdc3c7"
+                            if (parent.pressed) return Qt.darker(timerItem && timerItem.isRunning ? dangerColor : successColor)
+                            return timerItem && timerItem.isRunning ? dangerColor : successColor
+                        }
+                        radius: 4
                     }
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                    font.bold: true
-                }
-                onClicked: {
-                    if (timerItem && timerItem.isRunning) {
-                        stopTimer()
-                    } else {
-                        startTimer()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: parent.font.pixelSize
+                        font.bold: true
+                    }
+                    onClicked: {
+                        if (timerItem && timerItem.isRunning) {
+                            stopTimer()
+                        } else {
+                            startTimer()
+                        }
                     }
                 }
+                
+                // Reset Button
+                Button {
+                    Layout.preferredWidth: 50
+                    Layout.preferredHeight: 30
+                    text: "Reset"
+                    font.pixelSize: 10
+                    focus: false
+                    background: Rectangle {
+                        color: parent.pressed ? Qt.darker(warningColor) : warningColor
+                        radius: 4
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: parent.font.pixelSize
+                        font.bold: true
+                    }
+                    onClicked: resetTimer()
+                }
             }
             
-            // Reset Button
-            Button {
-                Layout.preferredWidth: 50
-                Layout.preferredHeight: 30
-                text: "Reset"
-                font.pixelSize: 10
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker(warningColor) : warningColor
-                    radius: 4
+            // Time increment controls (increment button above +/- buttons)
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 2
+                
+                // Time increment toggle (above +/- buttons)
+                Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 50
+                    Layout.preferredHeight: 20
+                    property var increments: [60, 300, 1800, 3600] // 1m, 5m, 30m, 1h
+                    property var incrementLabels: ["1m", "5m", "30m", "1h"]
+                    property int currentIndex: 0
+                    
+                    text: incrementLabels[currentIndex]
+                    font.pixelSize: 8
+                    focus: false
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? Qt.darker(accentColor) : accentColor
+                        radius: 3
+                        opacity: 0.8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: parent.font.pixelSize
+                        font.bold: true
+                    }
+                    
+                    onClicked: {
+                        currentIndex = (currentIndex + 1) % increments.length
+                    }
+                    
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Click to cycle time increment"
                 }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                    font.bold: true
+                
+                // Plus/minus buttons
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 1
+                    
+                    // Minus Button
+                    Button {
+                        Layout.preferredWidth: 24
+                        Layout.preferredHeight: 24
+                        text: "−"
+                        font.pixelSize: 12
+                        focus: false
+                        
+                        property Button incrementButton: parent.parent.children[0]
+                        
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker("#e74c3c") : "#e74c3c"
+                            radius: 3
+                        }
+                        
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: parent.font.pixelSize
+                            font.bold: true
+                        }
+                        
+                        onClicked: {
+                            adjustTime(-incrementButton.increments[incrementButton.currentIndex])
+                        }
+                    }
+                    
+                    // Plus Button
+                    Button {
+                        Layout.preferredWidth: 24
+                        Layout.preferredHeight: 24
+                        text: "+"
+                        font.pixelSize: 12
+                        focus: false
+                        
+                        property Button incrementButton: parent.parent.children[0]
+                        
+                        background: Rectangle {
+                            color: parent.pressed ? Qt.darker("#27ae60") : "#27ae60"
+                            radius: 3
+                        }
+                        
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: parent.font.pixelSize
+                            font.bold: true
+                        }
+                        
+                        onClicked: {
+                            adjustTime(incrementButton.increments[incrementButton.currentIndex])
+                        }
+                    }
                 }
-                onClicked: resetTimer()
-            }
-            
-            // Time Adjustment Buttons
-            Button {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                text: "-1m"
-                font.pixelSize: 8
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker("#95a5a6") : "#95a5a6"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                }
-                onClicked: adjustTime(-60)
-            }
-            
-            Button {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                text: "-1h"
-                font.pixelSize: 8
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker("#95a5a6") : "#95a5a6"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                }
-                onClicked: adjustTime(-3600)
-            }
-            
-            Button {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                text: "+1h"
-                font.pixelSize: 8
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker("#95a5a6") : "#95a5a6"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                }
-                onClicked: adjustTime(3600)
-            }
-            
-            Button {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                text: "+1m"
-                font.pixelSize: 8
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker("#95a5a6") : "#95a5a6"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                }
-                onClicked: adjustTime(60)
-            }
-            
-            // Delete Button
-            Button {
-                Layout.preferredWidth: 50
-                Layout.preferredHeight: 30
-                text: "Delete"
-                font.pixelSize: 9
-                focus: false
-                background: Rectangle {
-                    color: parent.pressed ? Qt.darker(dangerColor) : dangerColor
-                    radius: 4
-                    opacity: 0.8
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: parent.font.pixelSize
-                }
-                onClicked: deleteTimer()
             }
         }
     }
     
-    // Mouse area for timer selection (avoiding the drag handle area)
+    // Delete button in top-right corner
+    Button {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: 8
+        anchors.rightMargin: 8
+        width: 24
+        height: 24
+        focus: false
+        
+        background: Rectangle {
+            radius: 12
+            color: parent.pressed ? Qt.darker(dangerColor) : (parent.hovered ? dangerColor : Qt.rgba(dangerColor.r, dangerColor.g, dangerColor.b, 0.7))
+            opacity: parent.hovered ? 1.0 : 0.6
+            
+            Behavior on opacity {
+                NumberAnimation { duration: 150 }
+            }
+        }
+        
+        contentItem: Text {
+            text: "×"
+            color: "white"
+            font.pixelSize: 16
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+        
+        onClicked: deleteTimer()
+        
+        ToolTip.visible: hovered
+        ToolTip.text: "Delete this timer"
+        ToolTip.delay: 500
+    }
+    
+    // Mouse area for timer selection (avoiding delete button and drag handle)
     MouseArea {
         anchors.fill: parent
-        anchors.leftMargin: 20  // Avoid the drag handle area
+        anchors.leftMargin: 20   // Avoid the drag handle area
+        anchors.topMargin: 40    // Avoid the delete button
+        anchors.rightMargin: 40  // Avoid the delete button
         z: -1  // Lower z-order so buttons can still be clicked
         onClicked: {
             selectTimer()
